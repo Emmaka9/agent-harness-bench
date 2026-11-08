@@ -34,6 +34,36 @@ const full = read('journal-full.jsonl').filter((r) => !isInfraInvalid(r));
 const e4recs = fs.existsSync(path.join(RUNS, 'journal-e4.jsonl')) ? read('journal-e4.jsonl').filter((r) => !isInfraInvalid(r)) : [];
 const guided = fs.existsSync(path.join(RUNS, 'journal-guided.jsonl')) ? read('journal-guided.jsonl').filter((r) => !isInfraInvalid(r)) : [];
 const hinted = fs.existsSync(path.join(RUNS, 'journal-hint.jsonl')) ? read('journal-hint.jsonl').filter((r) => !isInfraInvalid(r)) : [];
+// Replacement runs (FOLLOWUP-FOUR-RUNS-20261108): four hardened-runner t10-s0 reruns of
+// compromised E4 cells. Selection policy (documented in runs/e4-replace/README.md):
+//   replace-policy (default for published tables): for the four replaced runIds, use the
+//     latest valid e4-replace record INSTEAD OF the retained/quarantined original; all
+//     other cells unchanged. Rationale: the originals lack run-scoped attribution
+//     (3 retained pre-hardening) or verifiable provenance (1 quarantined), so the
+//     hardened rerun is the best-evidence record for those cells.
+//   retain-policy (sensitivity): keep originals; the replacement records exist but do
+//     not enter aggregates. Shows whether any conclusion depends on the swap.
+const e4replace = fs.existsSync(path.join(RUNS, 'journal-e4-replace.jsonl'))
+  ? read('journal-e4-replace.jsonl').filter((r) => !isInfraInvalid(r))
+  : [];
+const REPLACED_RUNIDS = new Set([
+  't10-s0-opencode-glm-5.3-flash',
+  't10-s0-pi-glm-5.3-flash',
+  't10-s0-claude-deepseek-v4-flash',
+  't10-s0-opencode-deepseek-v4-flash',
+]);
+// Both views keyed by runId (latest attempt wins inside each source).
+const latestBy = (arr) => {
+  const m = new Map();
+  for (const r of arr) m.set(r.runId, r);
+  return m;
+};
+function mergeReplace(baseArr, replArr) {
+  const base = latestBy(baseArr);
+  const repl = latestBy(replArr.filter((r) => REPLACED_RUNIDS.has(r.runId)));
+  for (const [rid, r] of repl) base.set(rid, r); // replacement wins for replaced cells only
+  return [...base.values()];
+}
 let e2 = null;
 if (fs.existsSync(path.join(RUNS, 'e2-taxonomy.json'))) {
   const raw = JSON.parse(fs.readFileSync(path.join(RUNS, 'e2-taxonomy.json'), 'utf8'));
@@ -64,7 +94,7 @@ function e3() {
   const HARD = ['t9', 't10', 't11'];
   const key = (r) => [r.task, r.seed, r.harness, r.model].join('|');
   const baseEasy = new Map(full.filter((r) => scored(r) && r.seed === 0 && !HARD.includes(r.task)).map((r) => [key(r), r]));
-  const baseHard = new Map(e4recs.filter((r) => scored(r) && r.seed === 0).map((r) => [key(r), r]));
+  const baseHard = new Map(mergeReplace(e4recs, e4replace).filter((r) => scored(r) && r.seed === 0).map((r) => [key(r), r]));
   const rows = [];
   const combos = [...new Set([...full, ...e4recs, ...guided].map((r) => `${r.harness}/${r.model}`))];
   for (const c of combos) {
@@ -111,46 +141,65 @@ function e3() {
 // ---------------- E4: difficulty scaling ----------------
 function e4() {
   const HARD = ['t9', 't10', 't11'];
-  const hard = e4recs.filter((r) => scored(r) && HARD.includes(r.task));
-  const easy = full.filter((r) => scored(r) && !HARD.includes(r.task));
-  const rows = [];
-  for (const h of ['claude', 'opencode', 'pi']) {
+  const compute = (e4src) => {
+    const hard = e4src.filter((r) => scored(r) && HARD.includes(r.task));
+    const rows = [];
+    for (const h of ['claude', 'opencode', 'pi']) {
+      for (const m of ['glm-5.3-flash', 'deepseek-v4-flash']) {
+        const hh = hard.filter((r) => r.harness === h && r.model === m);
+        const hs = (a) => a.filter((r) => r.score.class === 'solved').length;
+        const pc = mean(hh.map((r) => r.score.passed / r.score.total));
+        rows.push({ combo: `${h}/${m}`, hard: `${hs(hh)}/${hh.length}`, hardPartial: hh.length ? pc.toFixed(2) : '-' });
+      }
+    }
+    const hardSeed0 = hard.filter((r) => r.seed === 0);
+    const hardExtra = hard.filter((r) => r.seed > 0);
+    const hs = (a) => a.filter((r) => r.score.class === 'solved').length;
+    return {
+      rows,
+      hardN: hard.length,
+      plannedSeed0N: hardSeed0.length,
+      exploratoryExtraN: hardExtra.length,
+      hardSeed0Rows: rows.map((r) => {
+        const [h, m] = r.combo.split('/');
+        const hs0 = hardSeed0.filter((x) => x.harness === h && x.model === m);
+        const hsx = hardExtra.filter((x) => x.harness === h && x.model === m);
+        return { combo: r.combo, seed0: `${hs(hs0)}/${hs0.length}`, extraSeeds: `${hs(hsx)}/${hsx.length}` };
+      }),
+    };
+  };
+  const retained = compute(e4recs);
+  const replaced = compute(mergeReplace(e4recs, e4replace));
+  // task-level breakdown (replace-policy): per hard task, per-model solved/total + partial
+  const HARD_TASKS = ['t9', 't10', 't11'];
+  const hardReplaced = mergeReplace(e4recs, e4replace).filter((r) => scored(r) && HARD_TASKS.includes(r.task));
+  const hardByTask = {};
+  for (const t of HARD_TASKS) {
+    hardByTask[t] = {};
     for (const m of ['glm-5.3-flash', 'deepseek-v4-flash']) {
-      const he = easy.filter((r) => r.harness === h && r.model === m);
-      const hh = hard.filter((r) => r.harness === h && r.model === m);
-      const hs = (a) => a.filter((r) => r.score.class === 'solved').length;
-      // partial credit on hard tasks
-      const pc = mean(hh.map((r) => r.score.passed / r.score.total));
-      rows.push({
-        combo: `${h}/${m}`,
-        easy: hs(easy.filter((r) => r.harness === h && r.model === m)) ? `${hs(he)}/${he.length}` : `0/${he.length}`,
-        hard: `${hs(hh)}/${hh.length}`,
-        hardPartial: hh.length ? pc.toFixed(2) : '-',
-      });
+      const rs = hardReplaced.filter((r) => r.task === t && r.model === m);
+      const s = rs.filter((r) => r.score.class === 'solved').length;
+      const pc = rs.length ? mean(rs.map((r) => r.score.passed / r.score.total)) : null;
+      hardByTask[t][m === 'glm-5.3-flash' ? 'glm' : 'ds'] = `${s}/${rs.length}` + (pc !== null ? ` pc ${pc.toFixed(2)}` : '');
     }
   }
-  // stub baselines from journal if graded runs exist for stubs (not tracked) — report task-level:
-  const hardByTask = {};
-  for (const t of HARD) {
-    const rs = hard.filter((r) => r.task === t);
-    hardByTask[t] = rs.map((r) => `${r.harness.slice(0, 2)}:${r.score.passed}/${r.score.total}`).join(' ');
+  const changed = [];
+  for (let i = 0; i < retained.rows.length; i++) {
+    if (retained.rows[i].hard !== replaced.rows[i].hard || retained.rows[i].hardPartial !== replaced.rows[i].hardPartial) {
+      changed.push({ combo: retained.rows[i].combo, retain: retained.rows[i].hard + ' pc ' + retained.rows[i].hardPartial, replace: replaced.rows[i].hard + ' pc ' + replaced.rows[i].hardPartial });
+    }
   }
-  // Planned vs exploratory split (REVIEW-20261108-0247): seed 0 was the pre-registered E4
-  // design; seeds 1/2 were added afterwards for power. Report both, keep them separable.
-  const hardSeed0 = hard.filter((r) => r.seed === 0);
-  const hardExtra = hard.filter((r) => r.seed > 0);
+  const easy = full.filter((r) => scored(r) && !HARD.includes(r.task));
   return {
-    rows, hardByTask,
-    hardN: hard.length,
-    plannedSeed0N: hardSeed0.length,
-    exploratoryExtraN: hardExtra.length,
-    hardSeed0Rows: rows.map((r) => {
+    ...replaced,
+    hardByTask,
+    rows: replaced.rows.map((r) => {
       const [h, m] = r.combo.split('/');
-      const hs0 = hardSeed0.filter((x) => x.harness === h && x.model === m);
-      const hsx = hardExtra.filter((x) => x.harness === h && x.model === m);
+      const he = easy.filter((x) => x.harness === h && x.model === m);
       const hs = (a) => a.filter((x) => x.score.class === 'solved').length;
-      return { combo: r.combo, seed0: `${hs(hs0)}/${hs0.length}`, extraSeeds: `${hs(hsx)}/${hsx.length}` };
+      return { ...r, easy: `${hs(he)}/${he.length}` };
     }),
+    replacementSensitivity: { policy: 'replace (default): hardened rerun wins for the 4 replaced t10-s0 cells; retain = originals kept', changedCells: changed, retainedView: retained.rows, replacedRunIds: [...REPLACED_RUNIDS], replacementRecordsUsed: latestBy(e4replace).size },
   };
 }
 

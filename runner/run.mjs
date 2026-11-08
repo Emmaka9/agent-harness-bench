@@ -38,11 +38,12 @@ function argOf(name, def) {
 const PHASE = argOf('--phase', 'pilot');
 const CONC = Number(argOf('--concurrency', '2'));
 const MODEL_FILTER = argOf('--models', null);
+const HARNESS_FILTER = argOf('--harnesses', null);
 const TASK_FILTER = argOf('--tasks', null);
 const SEED_FILTER = argOf('--seeds', null);
 
 const models = MODEL_FILTER ? MODEL_FILTER.split(',') : MODELS;
-const harnesses = HARNESSSES;
+const harnesses = HARNESS_FILTER ? HARNESS_FILTER.split(',') : HARNESSSES;
 const seeds = SEED_FILTER ? SEED_FILTER.split(',').map(Number) : SEEDS;
 
 // task list
@@ -60,6 +61,14 @@ if (PHASE === 'pilot') {
 } else if (PHASE === 'e4') {
   // E4: difficulty-scaling baseline — the hard tasks (t9,t10,t11), unguided, seed 0.
   // Separate phase name so its journal never mixes with the original 8-task matrix.
+  taskIds = ['t9', 't10', 't11'];
+} else if (PHASE === 'e4-replace') {
+  // Replacement runs for specific compromised E4 cells (FOLLOWUP-FOUR-RUNS-20261108):
+  // same protocol as E4 (hard tasks, unguided, original prompts, fixed budgets), but a
+  // SEPARATE journal + proxy journal + transcript prefix so original E4 records,
+  // quarantine evidence, and transcripts stay byte-identical. Provenance lives in
+  // runs/e4-replace/README.md. Never mixed into E4 aggregates unless the published
+  // selection policy says so.
   taskIds = ['t9', 't10', 't11'];
 } else if (PHASE === 'validate') {
   // Reliability validation: one tiny smoke run per requested combo, no grading matrix.

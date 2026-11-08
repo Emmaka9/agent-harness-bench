@@ -1,6 +1,6 @@
 # Benchmark Report: glm-5.3-flash vs deepseek-v4-flash across Claude Code / opencode / pi
 
-**Date:** 2026-11-07 (main matrix) · 2026-11-08 (hardening + follow-up experiments) · **Matrix:** 8 tasks × 3 seeds × 6 combos = 144 runs, all graded; plus E4 54 scheduled (53 observed) / E3 66 / E5 24 follow-up runs. **Zero unexplained infra failures.** Request attribution by run ID applies to E3, E5, the validation matrix, all local tests, and 50 of 53 E4 records; the 3 exceptions are seed-0 Mini-Regex-Engine E4 records that ran on the pre-hardening runner (time-window attribution + requested-model checks; disclosed in the E4 section). The original 144-run matrix predates run-scoped attribution and was verified by per-worker proxy isolation + requested-model **label** checks instead (`modelCheck.anyOtherModel = 0` everywhere — outgoing request labels, not served-model echoes).
+**Date:** 2026-11-07 (main matrix) · 2026-11-08 (hardening + follow-up experiments) · **Matrix:** 8 tasks × 3 seeds × 6 combos = 144 runs, all graded; plus E4 54 scheduled (53 original observed + 4 replacement reruns of compromised seed-0 Mini-Regex-Engine cells) / E3 66 / E5 24 follow-up runs. **Zero unexplained infra failures.** Request attribution by run ID applies to E3, E5, the validation matrix, all replacement runs, all local tests, and 50 of 53 original E4 records; the 3 exceptions are seed-0 Mini-Regex-Engine E4 records that ran on the pre-hardening runner (time-window attribution + requested-model checks; superseded by run-scoped replacements in the published tables). The original 144-run matrix predates run-scoped attribution and was verified by per-worker proxy isolation + requested-model **label** checks instead (`modelCheck.anyOtherModel = 0` everywhere — outgoing request labels, not served-model echoes).
 
 ## Ranking (primary: hidden-test solve rate; secondary: per-test fraction)
 
@@ -49,7 +49,7 @@ glm-5.3-flash's only drops: 1 run each of t1/t3/t7 (pi) and t3 (opencode). deeps
 
 ## Follow-up experiments (post-hardening, 2026-11-08)
 
-After a reliability hardening pass (run-scoped request attribution through the logging proxy with 403 rejection of unattributed traffic; explicit timeout labeling; retries with preserved per-attempt transcripts; sequential execution), a 6-combo validation matrix passed all integrity checks (correct model on every request, zero foreign/unattributed traffic, zero unexplained rate-limit failures). E3, E5, validation, and 50 of 53 E4 records ran on the hardened runner, one gateway consumer at a time; the 3 E4 exceptions are seed-0 Mini-Regex-Engine records from 04:41–04:46 UTC that ran on the pre-hardening runner (time-window attribution + requested-model checks — `modelCheck.anyOtherModel = false` — but no run-scoped foreign/unattributed counters, and their window overlapped the operator's own gateway session during the 429 storm). Records: `runs/journal-{e4,guided,hint}.jsonl`; quarantined records in `runs/quarantine/`.
+After a reliability hardening pass (run-scoped request attribution through the logging proxy with 403 rejection of unattributed traffic; explicit timeout labeling; retries with preserved per-attempt transcripts; sequential execution), a 6-combo validation matrix passed all integrity checks (correct model on every request, zero foreign/unattributed traffic, zero unexplained rate-limit failures). E3, E5, validation, the four replacement runs, and 50 of 53 original E4 records ran on the hardened runner, one gateway consumer at a time; the 3 E4 exceptions are seed-0 Mini-Regex-Engine records from 04:41–04:46 UTC that ran on the pre-hardening runner (time-window attribution + requested-model checks — `modelCheck.anyOtherModel = false` — but no run-scoped foreign/unattributed counters, and their window overlapped the operator's own gateway session during the 429 storm; all three were later replaced, see E4 section). Records: `runs/journal-{e4,guided,hint,e4-replace}.jsonl`; quarantined records in `runs/quarantine/`.
 
 **Evidence limitation (disclosed):** ~175 proxy records from the 429-storm era (2026-11-08 03:58–04:46 UTC) were lost during the post-hardening journal re-split (operator error during `git checkout` reordering; documented in `runs/quarantine/README.md`) — 1 committed record (04:00:20Z) plus ~174 uncommitted appended records. No live journal record references them — they belonged to runs already purged or quarantined before the hardening pass — but their loss is real and limits retrospective verification of that era.
 
@@ -57,19 +57,19 @@ After a reliability hardening pass (run-scoped request attribution through the l
 
 ### E4 — difficulty scaling (hard tasks: Merge-interval Calendar, Mini Regex Engine, Job queue simulator)
 
-Seeds 0–2 × 6 combos × 3 tasks = **54 scheduled**; 53 observed + 1 missing (pre-hardening opencode/glm record on Mini Regex Engine quarantined for unverifiable provenance: transient 429 whose proxy evidence was overwritten — that cell is n=8, stated, not imputed). Three other seed-0 Mini-Regex-Engine records (pi/glm, claude/deepseek, opencode/deepseek — 04:41–04:46 UTC) also ran on the pre-hardening runner and keep time-window attribution instead of run-scoped counters; they pass requested-model checks and are retained (disclosed here rather than silently pooled). Fixed-budget counting: timeouts are unsolved.
+Seeds 0–2 × 6 combos × 3 tasks = **54 scheduled**; 53 observed + 1 missing (pre-hardening opencode/glm record on Mini Regex Engine quarantined for unverifiable provenance: transient 429 whose proxy evidence was overwritten). Three further seed-0 Mini-Regex-Engine records (pi/glm, claude/deepseek, opencode/deepseek — 04:41–04:46 UTC) also ran on the pre-hardening runner (time-window attribution only; requested-model checks pass; disclosed rather than silently pooled). **Replacement runs (2026-11-08 22:54–23:08 UTC):** all four compromised seed-0 Mini-Regex-Engine cells were re-run on the hardened runner with run-scoped attribution (provenance + selection policy in `runs/e4-replace/README.md`); the tables below use those replacements for the four cells (replace-policy) — results: opencode/glm 21/22, pi/glm 21/22, claude/deepseek 21/22, opencode/deepseek **timed out** (graded 21/22, counted unsolved). **Zero solves**; no conclusion changes under the retain-policy sensitivity (same rows, op/glm cell stays n=8). Fixed-budget counting: timeouts are unsolved.
 
 | Combo | Easy (t1–t8, of 24) | Hard solved (fixed-budget) | Hard partial-credit | planned seed-0 | exploratory seeds 1–2 |
 |---|---|---|---|---|---|
 | claude/glm | 24/24 | **5/9** | 0.87 | 2/3 | 3/6 |
-| opencode/glm | 23/24 | **4/8** | 0.86 | 2/2 | 2/6 |
-| pi/glm | 21/24 | **3/9** | 0.95 | 1/3 | 2/6 |
-| claude/deepseek | 20/24 | **3/9** | 0.94 | 0/3 | 3/6 |
+| opencode/glm | 23/24 | **4/9** | 0.87 | 2/3 | 2/6 |
+| pi/glm | 21/24 | **3/9** | 0.96 | 1/3 | 2/6 |
+| claude/deepseek | 20/24 | **3/9** | 0.95 | 0/3 | 3/6 |
 | opencode/deepseek | 12/24 | **3/9** | 0.89 | 1/3 | 2/6 |
 | pi/deepseek | 15/24 | **2/9** | 0.72 | 1/3 | 1/6 |
 
-- **Model ordering holds on hard tasks** — every glm combo outsolves (or ties) its deepseek counterpart at n≈9. **Harness ordering does not fully hold**: on deepseek, pi (2/9) now trails opencode (3/9), reversing the easy-task order, and claude/deepseek ties opencode/deepseek at 3/9. On glm, claude > opencode > pi persists.
-- Mini Regex Engine (t10) is the hardest single task: **0 solved for either model** (glm 0/8 — one cell quarantined; deepseek 0/9 — both struggle with greedy-quantifier backtracking semantics; the recurring failure is the hidden test "quantified groups capture the last completed repetition", failed by all 17 runs; pi/deepseek twice completed full 0/22 stalls). Mean partial credit 0.72 (glm) vs 0.71 (deepseek); the per-run spread is wide: 5 runs hit the 360s wall clock (graded 0–21/22 — three of them still reached 21/22), two completed pi/deepseek runs graded 0/22, and every other run reached 19–21/22.
+- **Model ordering holds on hard tasks** — every glm combo outsolves (or ties) its deepseek counterpart at n=9. **Harness ordering does not fully hold**: on deepseek, pi (2/9) now trails opencode (3/9), reversing the easy-task order, and claude/deepseek ties opencode/deepseek at 3/9. On glm, claude > opencode > pi persists.
+- Mini Regex Engine (t10) is the hardest single task: **0 solved for either model** (glm 0/9; deepseek 0/9 — both struggle with greedy-quantifier backtracking semantics; the recurring failure is the hidden test "quantified groups capture the last completed repetition", failed by all 18 records including all four replacements; pi/deepseek twice completed full 0/22 stalls). Mean partial credit 0.75 (glm) vs 0.72 (deepseek); the per-run spread is wide: 6 runs hit the 360s wall clock (graded 0–21/22 — three of them still reached 21/22), two completed pi/deepseek runs graded 0/22, and every other run reached 19–21/22.
 - Job queue simulator (t11, concurrency fairness) widens the **model** gap hardest: glm 4/9 vs deepseek 1/9 (fixed-budget).
 
 ### E3 — workflow-guidance normalization (all 11 tasks, seed 0, matched-key comparison)
@@ -79,7 +79,7 @@ A shared workflow guide (read the spec fully before coding; enumerate edge cases
 | Combo | Easy base → guided (matched n=8) | Δ | Hard base → guided (matched n) | Δ |
 |---|---|---|---|---|
 | claude/glm | 8/8 → 8/8 | 0 | 2/3 → 2/3 (n=3) | 0 |
-| opencode/glm | 7/8 → 7/8 | 0 | 2/2 → 2/2 (n=2; 1 guided record unmatched) | 0 |
+| opencode/glm | 7/8 → 7/8 | 0 | 2/3 → 2/3 (n=3, replacement baseline; 1 guided record unmatched under the retain-policy) | 0 |
 | pi/glm | 7/8 → 8/8 | +13 | 1/3 → 1/3 (n=3) | 0 |
 | claude/deepseek | 6/8 → 5/8 | −13 | 0/3 → 1/3 (n=3) | +33 |
 | **opencode/deepseek** | **3/8 → 6/8** | **+38** | 1/3 → 0/3 (n=3) | −33 |
@@ -123,4 +123,4 @@ A shared workflow guide (read the spec fully before coding; enumerate edge cases
 3. **deepseek-v4-flash through Claude Code** — the best deepseek combination by a clear paired margin.
 4. **deepseek through opencode/pi** — drops to 50–63%; the harness choice matters more for deepseek than for glm.
 
-Artifacts: `runs/journal-{pilot,full}.jsonl` (main-matrix records: per-test results, token usage, model verification) plus `runs/journal-{e4,guided,hint,validate}.jsonl` (follow-up phases, see section above), `logs/pilot-*.out.txt` + `logs/full-*.out.txt` (main-matrix transcripts; follow-up transcripts under `logs/e4-*`, `logs/guided-*`, `logs/hint-*`, `logs/validate-*`), `logs/gates/*.md` (gateway findings), `runner/{run,grade,analyze,proxy,redact}.mjs`. Gateway token redacted from any shared artifacts via `runner/redact.mjs`.
+Artifacts: `runs/journal-{pilot,full}.jsonl` (main-matrix records: per-test results, token usage, model verification) plus `runs/journal-{e4,guided,hint,validate,e4-replace}.jsonl` (follow-up phases, see section above; `runs/e4-replace/README.md` documents replacement provenance + selection policy), `logs/pilot-*.out.txt` + `logs/full-*.out.txt` (main-matrix transcripts; follow-up transcripts under `logs/e4-*`, `logs/guided-*`, `logs/hint-*`, `logs/validate-*`, `logs/e4-replace-*`), `logs/gates/*.md` (gateway findings), `runner/{run,grade,analyze,proxy,redact}.mjs`. Gateway token redacted from any shared artifacts via `runner/redact.mjs`.

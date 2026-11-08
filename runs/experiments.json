@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-08T09:53:42.037Z",
+  "generated": "2026-11-08T23:10:22.596Z",
   "e3": [
     {
       "combo": "claude/glm-5.3-flash",
@@ -126,12 +126,17 @@
         }
       ],
       "stratumHard": "hard (t9-t11), E4 seed-0 baseline",
-      "baseHard": "2/2 (100%)",
-      "guidedHard": "2/2 (100%)",
+      "baseHard": "2/3 (67%)",
+      "guidedHard": "2/3 (67%)",
       "deltaHard": "0",
-      "matchedNHard": 2,
-      "unmatchedGuidedHard": 1,
+      "matchedNHard": 3,
+      "unmatchedGuidedHard": 0,
       "pairedHard": [
+        {
+          "task": "t10",
+          "b": false,
+          "g": false
+        },
         {
           "task": "t11",
           "b": true,
@@ -445,48 +450,43 @@
     "rows": [
       {
         "combo": "claude/glm-5.3-flash",
-        "easy": "24/24",
         "hard": "5/9",
-        "hardPartial": "0.87"
+        "hardPartial": "0.87",
+        "easy": "24/24"
       },
       {
         "combo": "claude/deepseek-v4-flash",
-        "easy": "20/24",
         "hard": "3/9",
-        "hardPartial": "0.94"
+        "hardPartial": "0.95",
+        "easy": "20/24"
       },
       {
         "combo": "opencode/glm-5.3-flash",
-        "easy": "23/24",
-        "hard": "4/8",
-        "hardPartial": "0.86"
+        "hard": "4/9",
+        "hardPartial": "0.87",
+        "easy": "23/24"
       },
       {
         "combo": "opencode/deepseek-v4-flash",
-        "easy": "12/24",
         "hard": "3/9",
-        "hardPartial": "0.89"
+        "hardPartial": "0.89",
+        "easy": "12/24"
       },
       {
         "combo": "pi/glm-5.3-flash",
-        "easy": "21/24",
         "hard": "3/9",
-        "hardPartial": "0.95"
+        "hardPartial": "0.96",
+        "easy": "21/24"
       },
       {
         "combo": "pi/deepseek-v4-flash",
-        "easy": "15/24",
         "hard": "2/9",
-        "hardPartial": "0.72"
+        "hardPartial": "0.72",
+        "easy": "15/24"
       }
     ],
-    "hardByTask": {
-      "t9": "cl:22/22 op:22/22 pi:22/22 cl:19/22 op:22/22 pi:22/22 cl:22/22 op:22/22 pi:22/22 cl:22/22 op:22/22 pi:22/22 cl:21/22 op:22/22 pi:22/22 cl:22/22 op:22/22 pi:17/22",
-      "t10": "pi:20/22 cl:20/22 op:20/22 cl:21/22 pi:0/22 cl:0/22 op:21/22 pi:21/22 cl:21/22 op:19/22 pi:21/22 cl:21/22 op:1/22 pi:21/22 cl:21/22 op:19/22 pi:0/22",
-      "t11": "cl:22/22 op:22/22 pi:21/22 cl:20/22 op:20/22 pi:21/22 cl:22/22 op:21/22 pi:19/22 cl:22/22 op:20/22 pi:20/22 cl:22/22 op:21/22 pi:21/22 cl:20/22 op:12/22 pi:20/22"
-    },
-    "hardN": 53,
-    "plannedSeed0N": 17,
+    "hardN": 54,
+    "plannedSeed0N": 18,
     "exploratoryExtraN": 36,
     "hardSeed0Rows": [
       {
@@ -501,7 +501,7 @@
       },
       {
         "combo": "opencode/glm-5.3-flash",
-        "seed0": "2/2",
+        "seed0": "2/3",
         "extraSeeds": "2/6"
       },
       {
@@ -519,7 +519,80 @@
         "seed0": "1/3",
         "extraSeeds": "1/6"
       }
-    ]
+    ],
+    "hardByTask": {
+      "t9": {
+        "glm": "8/9 pc 0.99",
+        "ds": "7/9 pc 0.96"
+      },
+      "t10": {
+        "glm": "0/9 pc 0.75",
+        "ds": "0/9 pc 0.72"
+      },
+      "t11": {
+        "glm": "4/9 pc 0.96",
+        "ds": "1/9 pc 0.88"
+      }
+    },
+    "replacementSensitivity": {
+      "policy": "replace (default): hardened rerun wins for the 4 replaced t10-s0 cells; retain = originals kept",
+      "changedCells": [
+        {
+          "combo": "claude/deepseek-v4-flash",
+          "retain": "3/9 pc 0.94",
+          "replace": "3/9 pc 0.95"
+        },
+        {
+          "combo": "opencode/glm-5.3-flash",
+          "retain": "4/8 pc 0.86",
+          "replace": "4/9 pc 0.87"
+        },
+        {
+          "combo": "pi/glm-5.3-flash",
+          "retain": "3/9 pc 0.95",
+          "replace": "3/9 pc 0.96"
+        }
+      ],
+      "retainedView": [
+        {
+          "combo": "claude/glm-5.3-flash",
+          "hard": "5/9",
+          "hardPartial": "0.87"
+        },
+        {
+          "combo": "claude/deepseek-v4-flash",
+          "hard": "3/9",
+          "hardPartial": "0.94"
+        },
+        {
+          "combo": "opencode/glm-5.3-flash",
+          "hard": "4/8",
+          "hardPartial": "0.86"
+        },
+        {
+          "combo": "opencode/deepseek-v4-flash",
+          "hard": "3/9",
+          "hardPartial": "0.89"
+        },
+        {
+          "combo": "pi/glm-5.3-flash",
+          "hard": "3/9",
+          "hardPartial": "0.95"
+        },
+        {
+          "combo": "pi/deepseek-v4-flash",
+          "hard": "2/9",
+          "hardPartial": "0.72"
+        }
+      ],
+      "replacedRunIds": [
+        "t10-s0-opencode-glm-5.3-flash",
+        "t10-s0-pi-glm-5.3-flash",
+        "t10-s0-claude-deepseek-v4-flash",
+        "t10-s0-opencode-deepseek-v4-flash"
+      ],
+      "replacementRecordsUsed": 4
+    }
   },
   "e5": {
     "rows": [
