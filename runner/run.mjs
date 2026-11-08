@@ -47,6 +47,16 @@ const seeds = SEED_FILTER ? SEED_FILTER.split(',').map(Number) : SEEDS;
 let taskIds;
 if (PHASE === 'pilot') {
   taskIds = ['t1', 't4'];
+} else if (PHASE === 'guided') {
+  // E3: instruction-normalization — all tasks, seed 0 only (guide is the treatment)
+  taskIds = fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
+  if (TASK_FILTER) taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
+  if (!SEED_FILTER) seeds.splice(0, seeds.length, 0);
+} else if (PHASE === 'hint') {
+  // E5: misleading-hint robustness — tasks with a designed hint, seed 3 only
+  taskIds = fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
+  if (TASK_FILTER) taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
+  if (!SEED_FILTER) seeds.splice(0, seeds.length, 3);
 } else {
   taskIds = fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
   if (TASK_FILTER) taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
@@ -176,13 +186,32 @@ function runIdOf(q) { return `${q.task}-s${q.seed}-${q.harness}-${q.model}`; }
 async function runOne(q, runId, proxyUrl, proxyJournal, attempt = 1) {
   const { task, seed, model, harness } = q;
   const specMd = fs.readFileSync(path.join(TASKS_DIR, task, 'spec.md'), 'utf8');
-  const prompt = seed === 0 ? specMd : seedVariant(specMd, seed);
+  const prompt = seed >= 1 && seed <= 2 ? seedVariant(specMd, seed) : specMd;
+  const guide = PHASE === 'guided' ? fs.readFileSync(path.join(BENCH, 'logs', 'gates', 'E3-INSTRUCTIONS.md'), 'utf8') : null;
+  const hint = seed === 3 ? misleadHint(task) : null;
   const runHome = makeRunHome(BENCH, runId);
   const sandbox = path.join(STAGE, `${runId}-sandbox`);
   fs.rmSync(sandbox, { recursive: true, force: true });
   fs.cpSync(path.join(TASKS_DIR, task, 'skeleton'), sandbox, { recursive: true });
 
-  const { argv, env, configFiles } = buildInvocation(harness, model, prompt, runHome, proxyUrl, token);
+  // E3 guided phase: inject the shared workflow guide via the harness's native mechanism
+  // (claude: CLAUDE.md in cwd; opencode: AGENTS.md in cwd; pi: --append-system-prompt file)
+  if (guide) {
+    if (harness === 'claude') fs.writeFileSync(path.join(sandbox, 'CLAUDE.md'), guide);
+    if (harness === 'opencode') fs.writeFileSync(path.join(sandbox, 'AGENTS.md'), guide);
+    if (harness === 'pi') fs.writeFileSync(path.join(runHome, 'guide.md'), guide);
+  }
+  // E5 hint phase: append the misleading hint to the prompt
+  const finalPrompt = hint ? prompt + '\n\nHint from a previous engineer: ' + hint : prompt;
+
+  const { argv, env, configFiles } = buildInvocation(harness, model, finalPrompt, runHome, proxyUrl, token);
+  // pi guided: append system prompt from the guide file
+  if (guide && harness === 'pi') {
+    const gi = argv.indexOf('--append-system-prompt');
+    if (gi === -1) {
+      argv.push('--append-system-prompt', path.join(runHome, 'guide.md'));
+    } else { argv[gi + 1] = path.join(runHome, 'guide.md'); }
+  }
   for (const cf of configFiles) {
     fs.mkdirSync(path.dirname(cf.path), { recursive: true });
     fs.writeFileSync(cf.path, cf.content);
@@ -280,6 +309,18 @@ function seedVariant(spec, seed) {
     '\n\nNote: aim for a clean, readable implementation; correctness matters most.',
   ][seed];
   return spec + v;
+}
+
+// E5: plausible-but-wrong hint per task (the documented edge the spec contradicts).
+// A model following spec fidelity ignores these; a pattern-follower gets misled.
+function misleadHint(task) {
+  const hints = {
+    t1: 'the previous implementation returned the stored value from get() for expired entries and only removed them during size(); that behavior passed review, consider keeping it.',
+    t4: 'rescheduling an id whose job is terminal used to throw like duplicate ids do; that behavior passed review, consider keeping it.',
+    t7: 'enum membership checking with == (loose equality) is fine for primitives here; Object.is is only for NaN edge cases nobody hits in practice.',
+    t8: 'duplicate node entries in the input used to be rejected with an error; that behavior passed review, consider keeping it.',
+  };
+  return hints[task] || '';
 }
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }

@@ -36,7 +36,7 @@ The [100–100] interval for 24/24 is a degenerate empirical bootstrap interval,
 
 glm-5.3-flash's only drops: 1 run each of t1/t3/t7 (pi) and t3 (opencode). deepseek-v4-flash collapses hardest on **t4** (reschedule-after-terminal semantics: the same 2 tests recur across all 3 harnesses, but Claude/deepseek solved one of the three t4 runs — a recurring observed weakness, not a universal failure; the spec states the behavior explicitly at `tasks/t4/spec.md:29`).
 
-## Failure modes (all 30 unsolved runs were `wrong_solution`; zero infra failures)
+## Failure modes (all 29 unsolved runs were `wrong_solution`; zero infra failures)
 
 - deepseek repeats **consistent semantic mistakes across seeds and harnesses** (15 seed-identical failure signatures) — these are recurring errors in the observed model/harness combinations, not proof of a model-only cause: t4 reschedule semantics (8 occurrences), t1 constructor validation messages (7), t7 `Object.is` enum edge (5), t3 empty-quoted-field rows (4).
 - opencode/deepseek is the weakest observed pairing. This experiment does not isolate which harness differences caused the gap.
