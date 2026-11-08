@@ -25,7 +25,7 @@ Public benchmarks need Docker/pip and measure the model, not the model-through-h
 
 ## The 8 tasks
 
-Plain Node ESM, builtins only, injectable clock (no real sleeps), 17–28 hidden tests each:
+Plain Node ESM, builtins only, injectable clock (no real sleeps), 20–28 hidden tests each:
 
 | task | type | files |
 |---|---|---|
@@ -83,7 +83,7 @@ node runner/analyze.mjs --phase full --reps 10000
 - The statistical unit is the task (n=8), so CIs are wide; ranks within overlapping CIs are ties. The strongest claims are the paired contrasts (consistent across seeds and tasks).
 - Seeds are neutral prompt variants, not temperature changes; harness system prompts/tool ergonomics are uncontrolled — this measures model-through-harness as shipped.
 - The gateway's model id is what we control; served-model identity behind the gateway is not independently verifiable (documented quirk above).
-- All 30 unsolved runs were genuine `wrong_solution` grades; deepseek repeats semantically identical mistakes across seeds and harnesses (15 seed-identical failure signatures) — e.g. reschedule-after-terminal semantics in t4.
+- All 29 unsolved runs were genuine `wrong_solution` grades; deepseek repeats semantically identical mistakes across seeds and harnesses (25 unsolved runs collapse to 9 distinct failure signatures, 15 signature-by-seed cells) — e.g. reschedule-after-terminal semantics in t4.
 
 ## License
 

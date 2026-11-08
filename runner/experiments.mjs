@@ -19,14 +19,14 @@ const RUNS = path.join(BENCH, 'runs');
 const read = (f) => fs.readFileSync(path.join(RUNS, f), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
 
 // Infra-invalid records are excluded from every experiment comparison (same rule as
-// analyze.mjs): timeouts, gateway-degraded, runner/grade errors, 429-with-zero-requests.
+// analyze.mjs post-REVIEW-20261108-0345): gateway-degraded, runner/grade errors,
+// 429-with-zero-requests. Ordinary fixed-budget timeouts are benchmark OUTCOMES and
+// count as unsolved; they are NOT excluded and NOT retried-until-success.
 function isInfraInvalid(r) {
   return Boolean(
-    r.timedOut ||
     r.failure === 'gateway_degraded' ||
     r.failure === 'runner_error' ||
     r.failure === 'grade_error' ||
-    r.failure === 'timeout' ||
     (r.modelCheck?.saw429 && (r.usage?.requests ?? 0) === 0)
   );
 }
@@ -40,7 +40,10 @@ if (fs.existsSync(path.join(RUNS, 'e2-taxonomy.json'))) {
   e2 = Array.isArray(raw) ? { rows: raw } : raw; // saved as bare array of 29 rows
 }
 
-const scored = (r) => r.score && r.score.total > 0 && !r.failure;
+// scored: has a grade and is not infra-invalid. Timed-out runs KEEP their graded
+// score and count as unsolved (class !== 'solved') — fixed-budget policy; their
+// failure === 'timeout' stays on the record but does not disqualify them here.
+const scored = (r) => r.score && r.score.total > 0 && !(r.failure && r.failure !== 'timeout');
 const frac = (n, d) => (d ? (n / d).toFixed(2) : 'n/a');
 const pct = (arr) => {
   const s = arr.filter(scored);
@@ -53,55 +56,52 @@ const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 // ---------------- E3: guided vs unguided ----------------
 function e3() {
   if (!guided.length) return null;
-  // Strata-matched comparison (REVIEW-20261108-0247 #1): both sides restricted to the
-  // SAME task set. Guided runs on easy tasks (t1-t8) pair against the full-matrix seed-0
-  // baseline; guided runs on hard tasks (t9-t11) pair against the E4 seed-0 baseline.
-  // The two strata are reported separately and never pooled.
+  // Strata-matched comparison (REVIEW-20261108-0247 #1, tightened by REVIEW-20261108-0345 #2):
+  // both sides restricted to the SAME task set AND matched on exact
+  // task|seed|harness|model keys. Fixed-budget policy: ordinary timeouts count as
+  // unsolved on BOTH sides (they are benchmark outcomes). Rows report matched n and
+  // any unmatched records so unequal sets are visible, never silently pooled.
   const HARD = ['t9', 't10', 't11'];
-  const easyGuide = guided.filter((r) => !HARD.includes(r.task));
-  const hardGuide = guided.filter((r) => HARD.includes(r.task));
-  const base0 = full.filter((r) => scored(r) && r.seed === 0 && !HARD.includes(r.task));
-  const base0Hard = e4recs.filter((r) => scored(r) && r.seed === 0);
+  const key = (r) => [r.task, r.seed, r.harness, r.model].join('|');
+  const baseEasy = new Map(full.filter((r) => scored(r) && r.seed === 0 && !HARD.includes(r.task)).map((r) => [key(r), r]));
+  const baseHard = new Map(e4recs.filter((r) => scored(r) && r.seed === 0).map((r) => [key(r), r]));
   const rows = [];
-  const combos = [...new Set([...base0, ...easyGuide, ...base0Hard, ...hardGuide].map((r) => `${r.harness}/${r.model}`))];
+  const combos = [...new Set([...full, ...e4recs, ...guided].map((r) => `${r.harness}/${r.model}`))];
   for (const c of combos) {
     const [h, m] = c.split('/');
-    const b = base0.filter((r) => r.harness === h && r.model === m);
-    const g = easyGuide.filter((r) => scored(r) && r.harness === h && r.model === m);
-    const bH = base0Hard.filter((r) => r.harness === h && r.model === m);
-    const gH = hardGuide.filter((r) => scored(r) && r.harness === h && r.model === m);
+    const gEasy = guided.filter((r) => scored(r) && r.harness === h && r.model === m && !HARD.includes(r.task));
+    const gHard = guided.filter((r) => scored(r) && r.harness === h && r.model === m && HARD.includes(r.task));
     const solved = (arr) => arr.filter((r) => r.score.class === 'solved').length;
-    const bPct = b.length ? (100 * solved(b) / b.length).toFixed(0) : '-';
-    const gPct = g.length ? (100 * solved(g) / g.length).toFixed(0) : '-';
-    const delta = b.length && g.length ? (100 * solved(g) / g.length - 100 * solved(b) / b.length).toFixed(0) : '?';
-    // paired per-task deltas
-    const paired = [];
-    for (const t of [...new Set(g.map((r) => r.task))]) {
-      const bt = b.find((r) => r.task === t);
-      const gt = g.find((r) => r.task === t);
-      if (bt && gt) paired.push({ task: t, b: bt.score.class === 'solved', g: gt.score.class === 'solved' });
-    }
     const row = { combo: c };
-    if (b.length || g.length) {
-      row.base = `${solved(b)}/${b.length} (${bPct}%)`;
-      row.guided = `${solved(g)}/${g.length} (${gPct}%)`;
-      row.delta = delta;
-      row.paired = paired;
+    // easy stratum: matched keys only
+    const mEasy = gEasy.filter((r) => baseEasy.has(key(r)));
+    const unEasy = gEasy.length - mEasy.length;
+    if (gEasy.length || [...baseEasy.values()].some((r) => r.harness === h && r.model === m)) {
+      const bEasy = mEasy.map((r) => baseEasy.get(key(r)));
+      const bPct = bEasy.length ? (100 * solved(bEasy) / bEasy.length).toFixed(0) : '-';
+      const gPct = mEasy.length ? (100 * solved(mEasy) / mEasy.length).toFixed(0) : '-';
       row.stratum = 'easy (t1-t8)';
+      row.base = `${solved(bEasy)}/${bEasy.length} (${bPct}%)`;
+      row.guided = `${solved(mEasy)}/${mEasy.length} (${gPct}%)`;
+      row.delta = bEasy.length && mEasy.length ? (100 * solved(mEasy) / mEasy.length - 100 * solved(bEasy) / bEasy.length).toFixed(0) : '?';
+      row.matchedN = bEasy.length;
+      row.unmatchedGuided = unEasy;
+      row.paired = mEasy.map((r) => ({ task: r.task, b: baseEasy.get(key(r)).score.class === 'solved', g: r.score.class === 'solved' }));
     }
-    if (bH.length || gH.length) {
-      const gHPct = gH.length ? (100 * solved(gH) / gH.length).toFixed(0) : '-';
-      const bHPct = bH.length ? (100 * solved(bH) / bH.length).toFixed(0) : '-';
-      row.baseHard = `${solved(bH)}/${bH.length} (${bHPct}%)`;
-      row.guidedHard = `${solved(gH)}/${gH.length} (${gHPct}%)`;
-      row.deltaHard = bH.length && gH.length ? (100 * solved(gH) / gH.length - 100 * solved(bH) / bH.length).toFixed(0) : '?';
-      row.pairedHard = [];
-      for (const t of [...new Set(gH.map((r) => r.task))]) {
-        const bt = bH.find((r) => r.task === t);
-        const gt = gH.find((r) => r.task === t);
-        if (bt && gt) row.pairedHard.push({ task: t, b: bt.score.class === 'solved', g: gt.score.class === 'solved' });
-      }
+    // hard stratum: matched keys only (baseline = E4 seed-0, incl. timeouts as unsolved)
+    const mHard = gHard.filter((r) => baseHard.has(key(r)));
+    const unHard = gHard.length - mHard.length;
+    if (gHard.length || [...baseHard.values()].some((r) => r.harness === h && r.model === m)) {
+      const bHard = mHard.map((r) => baseHard.get(key(r)));
+      const bHPct = bHard.length ? (100 * solved(bHard) / bHard.length).toFixed(0) : '-';
+      const gHPct = mHard.length ? (100 * solved(mHard) / mHard.length).toFixed(0) : '-';
       row.stratumHard = 'hard (t9-t11), E4 seed-0 baseline';
+      row.baseHard = `${solved(bHard)}/${bHard.length} (${bHPct}%)`;
+      row.guidedHard = `${solved(mHard)}/${mHard.length} (${gHPct}%)`;
+      row.deltaHard = bHard.length && mHard.length ? (100 * solved(mHard) / mHard.length - 100 * solved(bHard) / bHard.length).toFixed(0) : '?';
+      row.matchedNHard = bHard.length;
+      row.unmatchedGuidedHard = unHard;
+      row.pairedHard = mHard.map((r) => ({ task: r.task, b: baseHard.get(key(r)).score.class === 'solved', g: r.score.class === 'solved' }));
     }
     rows.push(row);
   }

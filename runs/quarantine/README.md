@@ -1,7 +1,8 @@
 # Quarantine
 
 Records and transcripts excluded from model-quality rankings pending re-validation.
-Nothing here is deleted — it is evidence, just not trusted evidence.
+Nothing quarantined here is deleted — it is evidence, just not trusted evidence.
+(For records that WERE lost, see the third note below.)
 
 ## e4-quarantined.jsonl
 - `t10-s0-claude-glm-5.3-flash` (2026-11-08T04:35Z): timed out at 360s AND its proxy window
@@ -31,9 +32,13 @@ Quarantine journals must contain ONLY quarantined attempt records.
 
 ## 2026-11-08 third note — proxy journal provenance
 - logs/proxy-full-w0.jsonl: split by date boundary 2026-11-08T03:50Z. Original matrix
-  + E1/E2-era traffic (1219 records, zero 429s, last 2026-11-08T03:48Z) stays in the file;
-  the committed file's final 58 records (03:52-03:58, start of the 429-storm) moved to
+  + E1/E2-era traffic (1219 records, one 429 — 03:48:22Z, the storm's first — last
+  non-429 2026-11-08T03:48Z) stays in the file; the committed file's final 58 records
+  (03:52-03:58, start of the 429-storm) moved to
   logs/post-matrix/proxy-e4baseline-era-w0.jsonl.
+- Accounting: the committed file (1ca2f7c) held 1278 records = 1219 preserved + 58 moved
+  + 1 record (2026-11-08T04:00:20.291Z, status-undefined gateway error) that survives in
+  neither split file — lost in the same re-split, folded into the loss total below.
 - ~174 additional unattributed 429-era proxy records (03:58-04:46 UTC, appended to the
   working copy after the last commit) were lost during this re-split (git checkout
   ordering error by the operator agent). No live journal record references them; the

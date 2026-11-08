@@ -1,6 +1,6 @@
 # Benchmark Report: glm-5.3-flash vs deepseek-v4-flash across Claude Code / opencode / pi
 
-**Date:** 2026-11-07 (main matrix) · 2026-11-08 (hardening + follow-up experiments) · **Matrix:** 8 tasks × 3 seeds × 6 combos = 144 runs, all graded; plus E4 54 / E3 66 / E5 24 follow-up runs on the hardened runner. **Zero unexplained infra failures**; every request attributed to its run by id.
+**Date:** 2026-11-07 (main matrix) · 2026-11-08 (hardening + follow-up experiments) · **Matrix:** 8 tasks × 3 seeds × 6 combos = 144 runs, all graded; plus E4 54 scheduled (53 observed) / E3 66 / E5 24 follow-up runs. **Zero unexplained infra failures.** Request attribution by run ID applies to E3, E5, the validation matrix, all local tests, and 50 of 53 E4 records; the 3 exceptions are seed-0 Mini-Regex-Engine E4 records that ran on the pre-hardening runner (time-window attribution + requested-model checks; disclosed in the E4 section). The original 144-run matrix predates run-scoped attribution and was verified by per-worker proxy isolation + requested-model **label** checks instead (`modelCheck.anyOtherModel = 0` everywhere — outgoing request labels, not served-model echoes).
 
 ## Ranking (primary: hidden-test solve rate; secondary: per-test fraction)
 
@@ -38,7 +38,7 @@ glm-5.3-flash's only drops: 1 run each of t1/t3/t7 (pi) and t3 (opencode). deeps
 
 ## Failure modes (all 29 unsolved runs were `wrong_solution`; zero infra failures)
 
-- deepseek repeats **consistent semantic mistakes across seeds and harnesses** (15 seed-identical failure signatures) — these are recurring errors in the observed model/harness combinations, not proof of a model-only cause: t4 reschedule semantics (8 occurrences), t1 constructor validation messages (7), t7 `Object.is` enum edge (5), t3 empty-quoted-field rows (4).
+- deepseek repeats **consistent semantic mistakes across seeds and harnesses** — its 25 unsolved runs collapse to 9 distinct failure signatures (15 signature-by-seed cells) — recurring errors in the observed model/harness combinations, not proof of a model-only cause: t4 reschedule semantics (8 deepseek occurrences), t1 constructor-validation messages (6), t7 `Object.is` enum edge (4), t3 empty-quoted-field rows (3); the same failure families appear 1× each in isolated glm runs (t1, t7, t3), so they signal task difficulty as well as model weakness.
 - opencode/deepseek is the weakest observed pairing. This experiment does not isolate which harness differences caused the gap.
 
 ## Efficiency
@@ -49,45 +49,49 @@ glm-5.3-flash's only drops: 1 run each of t1/t3/t7 (pi) and t3 (opencode). deeps
 
 ## Follow-up experiments (post-hardening, 2026-11-08)
 
-After a reliability hardening pass (run-scoped request attribution through the logging proxy with 403 rejection of unattributed traffic; explicit timeout labeling; retries with preserved per-attempt transcripts; sequential execution), a 6-combo validation matrix passed all integrity checks (correct model on every request, zero foreign/unattributed traffic, zero unexplained rate-limit failures). The three experiments below ran on the hardened runner, one gateway consumer at a time. Records: `runs/journal-{e4,guided,hint}.jsonl`; quarantined records in `runs/quarantine/`.
+After a reliability hardening pass (run-scoped request attribution through the logging proxy with 403 rejection of unattributed traffic; explicit timeout labeling; retries with preserved per-attempt transcripts; sequential execution), a 6-combo validation matrix passed all integrity checks (correct model on every request, zero foreign/unattributed traffic, zero unexplained rate-limit failures). E3, E5, validation, and 50 of 53 E4 records ran on the hardened runner, one gateway consumer at a time; the 3 E4 exceptions are seed-0 Mini-Regex-Engine records from 04:41–04:46 UTC that ran on the pre-hardening runner (time-window attribution + requested-model checks — `modelCheck.anyOtherModel = false` — but no run-scoped foreign/unattributed counters, and their window overlapped the operator's own gateway session during the 429 storm). Records: `runs/journal-{e4,guided,hint}.jsonl`; quarantined records in `runs/quarantine/`.
+
+**Evidence limitation (disclosed):** ~175 proxy records from the 429-storm era (2026-11-08 03:58–04:46 UTC) were lost during the post-hardening journal re-split (operator error during `git checkout` reordering; documented in `runs/quarantine/README.md`) — 1 committed record (04:00:20Z) plus ~174 uncommitted appended records. No live journal record references them — they belonged to runs already purged or quarantined before the hardening pass — but their loss is real and limits retrospective verification of that era.
+
+**Timeout policy:** an ordinary fixed-budget timeout with healthy gateway traffic is a benchmark outcome (the agent had its full wall budget and didn't finish), not an infrastructure failure. All experiment tables below count timeouts as unsolved over all **scheduled** runs; runs are never retried-until-success. Partial-credit means keep the graded fraction of timed-out runs (their work was graded; zeroing them would give claude/glm 0.77 instead of 0.87 and pi/glm 0.85 instead of 0.95). The retry path exists solely for the gateway-poison signature (429s with zero completed model requests), which measures the gateway by construction. Where a cell is smaller than its cohort (quarantined record), the missing record is stated explicitly rather than imputed.
 
 ### E4 — difficulty scaling (hard tasks: Merge-interval Calendar, Mini Regex Engine, Job queue simulator)
 
-Seeds 0–2 × 6 combos × 3 tasks = 54 scheduled; 53 valid (1 pre-hardening record quarantined for unverifiable provenance: transient 429 whose proxy evidence was overwritten — opencode/glm on Mini Regex Engine, so that cell has n=6, not n=9). 5 runs hit the 360s wall clock on Mini Regex Engine — under the fixed-budget policy these count as unsolved with their graded partial credit; they are listed explicitly and excluded only from the completed-only sensitivity view.
+Seeds 0–2 × 6 combos × 3 tasks = **54 scheduled**; 53 observed + 1 missing (pre-hardening opencode/glm record on Mini Regex Engine quarantined for unverifiable provenance: transient 429 whose proxy evidence was overwritten — that cell is n=8, stated, not imputed). Three other seed-0 Mini-Regex-Engine records (pi/glm, claude/deepseek, opencode/deepseek — 04:41–04:46 UTC) also ran on the pre-hardening runner and keep time-window attribution instead of run-scoped counters; they pass requested-model checks and are retained (disclosed here rather than silently pooled). Fixed-budget counting: timeouts are unsolved.
 
-| Combo | Easy (t1–t8, of 24) | Hard solved | Hard partial-credit | of which planned seed-0 |
+| Combo | Easy (t1–t8, of 24) | Hard solved (fixed-budget) | Hard partial-credit | planned seed-0 | exploratory seeds 1–2 |
+|---|---|---|---|---|---|
+| claude/glm | 24/24 | **5/9** | 0.87 | 2/3 | 3/6 |
+| opencode/glm | 23/24 | **4/8** | 0.86 | 2/2 | 2/6 |
+| pi/glm | 21/24 | **3/9** | 0.95 | 1/3 | 2/6 |
+| claude/deepseek | 20/24 | **3/9** | 0.94 | 0/3 | 3/6 |
+| opencode/deepseek | 12/24 | **3/9** | 0.89 | 1/3 | 2/6 |
+| pi/deepseek | 15/24 | **2/9** | 0.72 | 1/3 | 1/6 |
+
+- **Model ordering holds on hard tasks** — every glm combo outsolves (or ties) its deepseek counterpart at n≈9. **Harness ordering does not fully hold**: on deepseek, pi (2/9) now trails opencode (3/9), reversing the easy-task order, and claude/deepseek ties opencode/deepseek at 3/9. On glm, claude > opencode > pi persists.
+- Mini Regex Engine (t10) is the hardest single task: **0 solved for either model** (glm 0/8 — one cell quarantined; deepseek 0/9 — both struggle with greedy-quantifier backtracking semantics; the recurring failure is the hidden test "quantified groups capture the last completed repetition", failed by all 17 runs; pi/deepseek twice completed full 0/22 stalls). Mean partial credit 0.72 (glm) vs 0.71 (deepseek); the per-run spread is wide: 5 runs hit the 360s wall clock (graded 0–21/22 — three of them still reached 21/22), two completed pi/deepseek runs graded 0/22, and every other run reached 19–21/22.
+- Job queue simulator (t11, concurrency fairness) widens the **model** gap hardest: glm 4/9 vs deepseek 1/9 (fixed-budget).
+
+### E3 — workflow-guidance normalization (all 11 tasks, seed 0, matched-key comparison)
+
+A shared workflow guide (read the spec fully before coding; enumerate edge cases; self-test against the spec's stated semantics before declaring done) was injected through each harness's native mechanism. Baselines: easy tasks vs the 144-run matrix seed-0 slice; hard tasks vs E4 seed-0. Comparisons use the **exact intersection of matching task/seed/harness/model keys** on both sides; matched n and unmatched records are reported. Timeouts count as unsolved on both sides.
+
+| Combo | Easy base → guided (matched n=8) | Δ | Hard base → guided (matched n) | Δ |
 |---|---|---|---|---|
-| claude/glm | 24/24 | 5/7 | 0.99 | 2/2 |
-| opencode/glm | 23/24 | 4/6 | 0.98 | 2/2 |
-| pi/glm | 21/24 | 3/8 | 0.95 | 1/3 |
-| claude/deepseek | 20/24 | 3/9 | 0.94 | 0/3 |
-| opencode/deepseek | 12/24 | 3/9 | 0.89 | 1/3 |
-| pi/deepseek | 15/24 | 2/9 | 0.72 | 1/3 |
+| claude/glm | 8/8 → 8/8 | 0 | 2/3 → 2/3 (n=3) | 0 |
+| opencode/glm | 7/8 → 7/8 | 0 | 2/2 → 2/2 (n=2; 1 guided record unmatched) | 0 |
+| pi/glm | 7/8 → 8/8 | +13 | 1/3 → 1/3 (n=3) | 0 |
+| claude/deepseek | 6/8 → 5/8 | −13 | 0/3 → 1/3 (n=3) | +33 |
+| **opencode/deepseek** | **3/8 → 6/8** | **+38** | 1/3 → 0/3 (n=3) | −33 |
+| pi/deepseek | 5/8 → 5/8 | 0 | 1/3 → 0/3 (n=3) | −33 |
 
-- The 8-task matrix saturated for glm (88–100%); the hard tasks restored headroom and **the ranking order is unchanged** — every glm combo still outsolves its deepseek counterpart, and claude > opencode > pi on both models.
-- Mini Regex Engine (t10) is the strongest single separator: 0/9 solved for both models (both stall on backtracking/lookahead semantics), partial credit 0.71–0.74.
-- Job queue simulator (t11, concurrency fairness) widens the **model** gap hardest: glm 4/9 vs deepseek 1/9.
-
-### E3 — workflow-guidance normalization (all 11 tasks, seed 0, guided vs unguided baselines)
-
-A shared workflow guide (read the spec fully before coding; enumerate edge cases; self-test against the spec's stated semantics before declaring done) was injected through each harness's native mechanism. Baselines: easy tasks vs the 144-run matrix seed-0 slice; hard tasks vs E4 seed-0. Strata never pooled.
-
-| Combo | Easy base → guided (of 8) | Δ | Hard base → guided (of 3) | Δ |
-|---|---|---|---|---|
-| claude/glm | 100% → 100% | 0 | 100% → 100% | 0 |
-| opencode/glm | 88% → 88% | 0 | 100% → 67% | −33 |
-| pi/glm | 88% → 100% | +13 | 33% → 33% | 0 |
-| claude/deepseek | 75% → 63% | −13 | 0% → 33% | +33 |
-| **opencode/deepseek** | **38% → 75%** | **+38** | 33% → 0% | −33 |
-| pi/deepseek | 63% → 63% | 0 | 33% → 0% | −33 |
-
-- **The workflow guide closes most of the opencode/deepseek harness gap on easy tasks** (+38pp; paired flips t1, t2, t3, t7 all miss→solve). This is direct evidence that a large share of that pairing's deficit was process (workflow), not model capability.
-- Guidance does **not** rescue deepseek on the hard tasks (opencode 1→0, pi 1→0, all flips solve→miss) — where the deficit is capability, normalizing workflow doesn't help.
+- **The workflow guide closes most of the opencode/deepseek harness gap on easy tasks** (+38pp; paired flips: t1, t2, t3, t7 miss→solve, offset by t8 solve→miss). This is direct evidence that a large share of that pairing's deficit was process (workflow), not model capability.
+- Guidance does **not** rescue deepseek on the hard tasks (opencode 1→0, pi 1→0; in both pairings the single paired flip is t9 solve→miss) — where the deficit is capability, normalizing workflow doesn't help. (pi/glm's easy +13 is its t7 miss→solve.)
 - claude/deepseek hard 0→1/3 (+33) suggests a capability-adjacent gain there, but n=3/stratum — read as directional only.
 
 ### E5 — misleading-hint robustness (t1, t4, t7, t8; seed 3; hint contradicts one spec requirement)
 
-24 runs, each prompt carries a plausible-but-wrong "hint from a previous engineer" targeting 1–2 hidden tests. Bitten = at least one hint-target test failed; followed = all hint-target tests failed.
+24 runs, each prompt carries a plausible-but-wrong "hint from a previous engineer" targeting 1–2 hidden tests. Bitten = at least one hint-target test failed; followed = all hint-target tests failed. **Measurement caveat:** hint-target failures are a proxy — they show the hint-contradicted behavior was wrong, not that the hint *caused* the error. There are no matched no-hint seed-3 controls (seed 3 is the hint treatment by design), so causal claims are qualified accordingly; a baseline-free reading is that these are observed failures exactly where the hints point.
 
 | Combo | Solved | Bitten | Followed hint |
 |---|---|---|---|
@@ -98,16 +102,12 @@ A shared workflow guide (read the spec fully before coding; enumerate edge cases
 | opencode/deepseek | 2/4 | 1 (t4) | 1 |
 | pi/deepseek | 1/4 | 2 (t4, t7) | 2 |
 
-- **claude never followed a misleading hint (0/4), regardless of model.** The hint-injection surface (system-prompt discipline) held everywhere except opencode and pi.
-- Bites concentrate in opencode/pi × deepseek (4 of 4 total bites) — the same pairings weakest in the main matrix. Spec-fidelity under conflicting evidence tracks overall capability.
-
-### Policy note (timeouts)
-
-An ordinary fixed-budget timeout with healthy gateway traffic is a benchmark outcome (the agent had its full wall budget and didn't finish), not an infrastructure failure. The primary ranking counts timeouts as unsolved over all scheduled runs; a completed-only sensitivity view and explicit timeout counts are reported alongside. Runs are never retried-until-success for the primary ranking. The retry path exists solely for the gateway-poison signature (429s with zero completed model requests), which measures the gateway by construction. In the original 144-run matrix there were zero timeouts, so the original ranking is unchanged under this policy.
+- **claude never had a hint-target failure (0/4), regardless of model** — consistent with holding the spec line under conflicting evidence. pi/glm also stayed clean.
+- **3 of the 4 bites are deepseek pairings** (opencode/deepseek t4, pi/deepseek t4 + t7) — the two weakest main-matrix pairings (50%, 62.5%); the fourth, opencode/glm on t4, is an outlier in the second-strongest pairing (95.8%). With no no-hint controls these failures cannot be causally attributed to the hints — treat as suggestive, not established.
 
 ## Method notes (what this benchmark does and doesn't measure)
 
-- 8 custom Node-ESM agentic-coding tasks (3 single-file bugfix/feature, 1 refactor, 4 multi-file), hidden `node --test` suites (17–28 tests/task), graded in staged /tmp copies; masters chmod 000 during runs; verified no task reads the reference solutions.
+- 8 custom Node-ESM agentic-coding tasks (3 single-file bugfix/feature, 1 refactor, 4 multi-file), hidden `node --test` suites (20–28 tests/task), graded in staged /tmp copies; masters chmod 000 during runs; verified no task reads the reference solutions.
 - Identical task prompts across harnesses; per-run fresh HOME/XDG/config isolation; every request logged through a local proxy: **144/144 runs sent exactly the requested model identifier** (`modelCheck.anyOtherModel = 0`). This verifies outgoing request labels, not the gateway's actual served model identity; the documented gateway routing quirk makes that distinction material.
 - All harnesses were pinned/piped through one gateway; claude aux-model slots were remapped to the run's model.
 - Gateway caps at 2 concurrent requests/token → all runs sequential (documented in `logs/gates/GATE-E-FINDING.md`); `max_tokens≤64` fast-path quirk documented in `logs/gates/GATE-A-FINDING.md`.
@@ -123,4 +123,4 @@ An ordinary fixed-budget timeout with healthy gateway traffic is a benchmark out
 3. **deepseek-v4-flash through Claude Code** — the best deepseek combination by a clear paired margin.
 4. **deepseek through opencode/pi** — drops to 50–63%; the harness choice matters more for deepseek than for glm.
 
-Artifacts: `runs/journal-{pilot,full}.jsonl` (all records: per-test results, token usage, model verification), `logs/pilot-*.out.txt` + `logs/full-*.out.txt` (transcripts), `logs/gates/*.md` (gateway findings), `runner/{run,grade,analyze,proxy,redact}.mjs`. Gateway token redacted from any shared artifacts via `runner/redact.mjs`.
+Artifacts: `runs/journal-{pilot,full}.jsonl` (main-matrix records: per-test results, token usage, model verification) plus `runs/journal-{e4,guided,hint,validate}.jsonl` (follow-up phases, see section above), `logs/pilot-*.out.txt` + `logs/full-*.out.txt` (main-matrix transcripts; follow-up transcripts under `logs/e4-*`, `logs/guided-*`, `logs/hint-*`, `logs/validate-*`), `logs/gates/*.md` (gateway findings), `runner/{run,grade,analyze,proxy,redact}.mjs`. Gateway token redacted from any shared artifacts via `runner/redact.mjs`.
