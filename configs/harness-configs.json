@@ -1,0 +1,83 @@
+{
+  "gateway": {
+    "base_url": "https://freeinference.org/anthropic",
+    "models": ["glm-5.3-flash", "deepseek-v4-flash"],
+    "note": "max_tokens<=64 requests are fast-pathed to qwen3.6-35b regardless of requested model (see logs/gates/GATE-A-FINDING.md). Validate requested model via proxy journal, not responseModel."
+  },
+  "claude": {
+    "version": "2.1.319",
+    "bin": "/lclhome/iemma002/.local/bin/claude",
+    "argv": ["-p", "<PROMPT>", "--model", "<MODEL>", "--output-format", "json", "--max-turns", "60", "--dangerously-skip-permissions"],
+    "isolation_env": {
+      "CLAUDE_CONFIG_DIR": "<RUNHOME>/claude",
+      "HOME": "<RUNHOME>/home"
+    },
+    "config_files": {
+      "<RUNHOME>/claude/settings.json": {
+        "env": {
+          "ANTHROPIC_BASE_URL": "<PROXY>",
+          "ANTHROPIC_AUTH_TOKEN": "<TOKEN>",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL": "<MODEL>",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL": "<MODEL>",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL": "<MODEL>",
+          "ANTHROPIC_SMALL_FAST_MODEL": "<MODEL>"
+        }
+      }
+    },
+    "extra_env": {
+      "DISABLE_AUTOUPDATER": "1",
+      "DISABLE_TELEMETRY": "1",
+      "DISABLE_ERROR_REPORTING": "1",
+      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    }
+  },
+  "opencode": {
+    "version": "1.19.5",
+    "bin": "vendor/node_modules/.bin/opencode",
+    "argv": ["run", "<PROMPT>", "--model", "bench/<MODEL>", "--format", "json", "--auto"],
+    "notes": "1.19.5 has no anthropic-compatible package (that is dev-branch); use @ai-sdk/openai-compatible against the gateway's OpenAI wire (https://freeinference.org/v1). opencode resolves workdir from PWD env, NOT spawn cwd — runner sets PWD/OLDPWD to the sandbox. No --archived flag in 1.19.5.",
+    "isolation_env": {
+      "HOME": "<RUNHOME>/home",
+      "XDG_CONFIG_HOME": "<RUNHOME>/xdg-config",
+      "XDG_DATA_HOME": "<RUNHOME>/xdg-data",
+      "XDG_CACHE_HOME": "<RUNHOME>/xdg-cache",
+      "XDG_STATE_HOME": "<RUNHOME>/xdg-state"
+    },
+    "config_files": {
+      "<RUNHOME>/xdg-config/opencode/opencode.json": {
+        "$schema": "https://opencode.ai/config.json",
+        "provider": {
+          "bench": {
+            "package": "@ai-sdk/openai-compatible",
+            "name": "bench",
+            "options": { "baseURL": "<PROXY_OPENAI>", "apiKey": "<TOKEN>" },
+            "models": { "<MODEL>": { "name": "<MODEL>" } }
+          }
+        }
+      }
+    },
+    "extra_env": {}
+  },
+  "pi": {
+    "version": "0.73.1",
+    "bin": "vendor/node_modules/.bin/pi",
+    "argv": ["-p", "<PROMPT>", "--provider", "bench", "--model", "<MODEL>", "--mode", "json", "--no-session"],
+    "isolation_env": {
+      "HOME": "<RUNHOME>/home",
+      "PI_CODING_AGENT_DIR": "<RUNHOME>/pi-agent"
+    },
+    "config_files": {
+      "<RUNHOME>/pi-agent/models.json": {
+        "providers": {
+          "bench": {
+            "baseUrl": "<PROXY>",
+            "api": "anthropic-messages",
+            "apiKey": "<TOKEN>",
+            "models": [{ "id": "<MODEL>", "contextWindow": 128000, "maxTokens": 16384 }]
+          }
+        }
+      }
+    },
+    "extra_env": {}
+  }
+}

@@ -1,0 +1,19 @@
+#vendored harness installs — reinstall with: cd vendor && npm install
+vendor/node_modules/
+
+#transient per-run homes and sandboxes (self-cleaning, contain nothing of value)
+home/
+stage/
+/tmp/
+
+#derived copy of hidden tests made at run time (master copies live in tasks/*/tests)
+hidden-tests/
+
+#pre-benchmark debris: gateway probes and invocation tests
+logs/probe-*
+logs/proxy-89*
+logs/test-inv*
+logs/test-inv*
+logs/smoke-proxy*
+logs/gates/proxy-smoke*
+logs/gates/*-help.txt

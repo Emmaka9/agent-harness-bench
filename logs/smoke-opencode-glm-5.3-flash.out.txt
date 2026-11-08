@@ -1,0 +1,44 @@
+opencode run [message..]
+
+run opencode with a message
+
+Positionals:
+  message  message to send                                                     [array] [default: []]
+
+Options:
+  -h, --help         show help                                                             [boolean]
+  -v, --version      show version number                                                   [boolean]
+      --print-logs   print logs to stderr                                                  [boolean]
+      --log-level    log level                  [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
+      --pure         run without external plugins                                          [boolean]
+      --command      the command to run, use message for args                               [string]
+  -c, --continue     continue the last session                                             [boolean]
+  -s, --session      session id to continue                                                 [string]
+      --fork         fork the session before continuing (requires --continue or --session) [boolean]
+  -m, --model        model to use in the format of provider/model                           [string]
+      --agent        agent to use                                                           [string]
+      --format       format: default (formatted) or json (raw JSON events)
+                                          [string] [choices: "default", "json"] [default: "default"]
+  -f, --file         file(s) to attach to message                                            [array]
+      --title        title for the session (uses truncated prompt if no value provided)     [string]
+      --attach       attach to a running opencode server (e.g., http://localhost:4096)      [string]
+  -p, --password     basic auth password (defaults to OPENCODE_SERVER_PASSWORD)             [string]
+  -u, --username     basic auth username (defaults to OPENCODE_SERVER_USERNAME or 'opencode')
+                                                                                            [string]
+      --dir          directory to run in, path on remote server if attaching                [string]
+      --port         port for the local server (defaults to random port if no value provided)
+                                                                                            [number]
+      --variant      model variant (provider-specific reasoning effort, e.g., high, max, minimal)
+                                                                                            [string]
+      --thinking     show thinking blocks                                                  [boolean]
+  -i, --interactive  run in direct interactive split-footer mode          [boolean] [default: false]
+      --auto         auto-approve permissions that are not explicitly denied (dangerous!)
+                                                                          [boolean] [default: false]{"type":"step_start","timestamp":1794041505925,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534e879001mBW0Sx30gc17VC","messageID":"msg_1b534e519001H0pZ63J5tHz2Ed","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"step-start"}}
+{"type":"tool_use","timestamp":1794041505939,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"type":"tool","tool":"write","callID":"chatcmpl-tool-b2df9ae3bdf5568d","state":{"status":"completed","input":{"filePath":"/lclhome/iemma002/workspace/bench/stage/smoke-opencode-glm-5.3-flash-sandbox/util.mjs","content":"export function greet(name) {\n  return `Hello, ${name}!`;\n}\n"},"output":"Wrote file successfully.","metadata":{"diagnostics":{},"filepath":"/lclhome/iemma002/workspace/bench/stage/smoke-opencode-glm-5.3-flash-sandbox/util.mjs","exists":false,"truncated":false},"title":"lclhome/iemma002/workspace/bench/stage/smoke-opencode-glm-5.3-flash-sandbox/util.mjs","time":{"start":1794041505922,"end":1794041505929}},"id":"prt_1b534e87b001876F5CeM52HFhQ","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","messageID":"msg_1b534e519001H0pZ63J5tHz2Ed"}}
+{"type":"step_finish","timestamp":1794041505939,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534e88b001jPTny759tqu5DN","reason":"tool-calls","messageID":"msg_1b534e519001H0pZ63J5tHz2Ed","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"step-finish","tokens":{"total":7341,"input":2674,"output":59,"reasoning":0,"cache":{"write":0,"read":4608}},"cost":0}}
+{"type":"step_start","timestamp":1794041506436,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534ea79001R2SHaBLSz668Z0","messageID":"msg_1b534e890001lglnmVPLOFBZY0","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"step-start"}}
+{"type":"tool_use","timestamp":1794041506485,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"type":"tool","tool":"bash","callID":"chatcmpl-tool-a4092045264a803d","state":{"status":"completed","input":{"command":"node -e \"import('./util.mjs').then(m=>console.log(m.greet('Ada')))\""},"output":"Hello, Ada!\n","metadata":{"output":"Hello, Ada!\n","exit":0,"truncated":false},"title":"node -e \"import('./util.mjs').then(m=>console.log(m.greet('Ada')))\"","time":{"start":1794041506431,"end":1794041506479}},"id":"prt_1b534ea7b001TUV9VIXc8rB6ZM","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","messageID":"msg_1b534e890001lglnmVPLOFBZY0"}}
+{"type":"step_finish","timestamp":1794041506485,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534eab0001PLVMB5NB4ws9Ax","reason":"tool-calls","messageID":"msg_1b534e890001lglnmVPLOFBZY0","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"step-finish","tokens":{"total":7382,"input":2742,"output":32,"reasoning":0,"cache":{"write":0,"read":4608}},"cost":0}}
+{"type":"step_start","timestamp":1794041506950,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534ec7b0016lSK04xWQt6RbP","messageID":"msg_1b534eab3001G4dFbbmvoa5fYk","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"step-start"}}
+{"type":"text","timestamp":1794041506950,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534ec7d001yHJYw1wAJqv5Hp","messageID":"msg_1b534eab3001G4dFbbmvoa5fYk","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"text","text":"util.mjs created and verified — output: `Hello, Ada!`","time":{"start":1794041506941,"end":1794041506943}}}
+{"type":"step_finish","timestamp":1794041506950,"sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","part":{"id":"prt_1b534ec800013zVUM1slHfn2ma","reason":"stop","messageID":"msg_1b534eab3001G4dFbbmvoa5fYk","sessionID":"ses_e4acb1c39ffebx2wa7ad081H7x","type":"step-finish","tokens":{"total":7407,"input":2782,"output":17,"reasoning":0,"cache":{"write":0,"read":4608}},"cost":0}}
