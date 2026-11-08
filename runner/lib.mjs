@@ -84,6 +84,28 @@ export function makeRunHome(root, runId) {
 }
 
 // ---------- harness spawn ----------
+// Registry of live harness children so a runner shutdown can kill the whole tree.
+// Each harness is spawned detached in its own process group (pgid = child pid);
+// killing -pid takes down the harness AND anything it spawned (subagents, shells).
+const liveChildren = new Set(); // child pid -> info
+
+export function trackedChildren() {
+  return [...liveChildren];
+}
+
+export async function killTrackedChildren() {
+  const kills = [];
+  for (const pid of liveChildren) {
+    kills.push((async () => {
+      try { process.kill(-pid, 'SIGKILL'); } catch {} // whole process group
+      try { process.kill(pid, 'SIGKILL'); } catch {} // belt and suspenders
+    })());
+  }
+  if (kills.length) await Promise.all(kills);
+  // give the kernel a moment to reap; do NOT wait indefinitely — SIGKILL is immediate
+  if (kills.length) await new Promise((r) => setTimeout(r, 250));
+}
+
 // Spawns the harness detached in its own process group so we can kill the whole tree.
 export function spawnHarness(argv, env, cwd, outPath, timeoutMs) {
   return new Promise((resolve) => {
@@ -101,18 +123,21 @@ export function spawnHarness(argv, env, cwd, outPath, timeoutMs) {
       detached: true,
       stdio: ['ignore', out, out],
     });
+    liveChildren.add(child.pid);
     const timer = setTimeout(() => {
       try { process.kill(-child.pid, 'SIGKILL'); } catch {}
     }, timeoutMs);
-    child.on('exit', (code, signal) => {
+    const finish = (result) => {
       clearTimeout(timer);
+      liveChildren.delete(child.pid);
       fs.closeSync(out);
-      resolve({ code, signal, timedOut: signal === 'SIGKILL' });
+      resolve(result);
+    };
+    child.on('exit', (code, signal) => {
+      finish({ code, signal, timedOut: signal === 'SIGKILL' });
     });
     child.on('error', (e) => {
-      clearTimeout(timer);
-      fs.closeSync(out);
-      resolve({ code: -1, signal: null, timedOut: false, spawnError: String(e) });
+      finish({ code: -1, signal: null, timedOut: false, spawnError: String(e) });
     });
   });
 }

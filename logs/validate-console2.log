@@ -1,0 +1,7 @@
+phase=validate queue=3 done=0 pending=3 concurrency=1
+proxies up on 8910..8910
+[2026-11-08T05:09:39.330Z] w0 t1-s0-claude-glm-5.3-flash: SOLVED (22s)
+[2026-11-08T05:10:02.312Z] w0 t1-s0-opencode-glm-5.3-flash: SOLVED (23s)
+[2026-11-08T05:10:10.329Z] w0 t1-s0-pi-glm-5.3-flash: SOLVED (8s)
+unlockMasters: done (finalized=true)
+done. journal: /lclhome/iemma002/workspace/bench/runs/journal-validate.jsonl

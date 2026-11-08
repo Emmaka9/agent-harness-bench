@@ -1,0 +1,10 @@
+phase=validate queue=6 done=0 pending=6 concurrency=1
+proxies up on 8910..8910
+[2026-11-08T05:06:25.608Z] w0 t1-s0-claude-glm-5.3-flash: SOLVED (28s)
+[2026-11-08T05:06:27.506Z] w0 t1-s0-opencode-glm-5.3-flash: 0/20 (2s)
+[2026-11-08T05:06:36.885Z] w0 t1-s0-pi-glm-5.3-flash: SOLVED (9s)
+[2026-11-08T05:07:05.344Z] w0 t1-s0-claude-deepseek-v4-flash: 19/20 (28s)
+[2026-11-08T05:07:07.049Z] w0 t1-s0-opencode-deepseek-v4-flash: 0/20 (2s)
+[2026-11-08T05:07:31.116Z] w0 t1-s0-pi-deepseek-v4-flash: SOLVED (24s)
+unlockMasters: done (finalized=true)
+done. journal: /lclhome/iemma002/workspace/bench/runs/journal-validate.jsonl

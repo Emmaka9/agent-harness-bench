@@ -12,7 +12,7 @@ import os from 'node:os';
 import http from 'node:http';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { BENCH, buildInvocation, makeRunHome, spawnHarness, journalAppend, readJournal, nowIso } from './lib.mjs';
+import { BENCH, buildInvocation, makeRunHome, spawnHarness, killTrackedChildren, journalAppend, readJournal, nowIso } from './lib.mjs';
 import { gradeSolution } from './grade.mjs';
 
 const RUNS = path.join(BENCH, 'runs');
@@ -21,7 +21,9 @@ const LOGS = path.join(BENCH, 'logs');
 const TASKS_DIR = path.join(BENCH, 'tasks');
 const HIDDEN = path.join(BENCH, 'hidden-tests'); // chmod 000 while runs are live
 const PROXY_PORT = 8910;
-const GATEWAY = 'https://freeinference.org/anthropic';
+// Upstream override for self-tests only (proxy.mjs honors BENCH_UPSTREAM too).
+// Never set in production runs; the default is the established gateway.
+const GATEWAY = process.env.BENCH_UPSTREAM || 'https://freeinference.org/anthropic';
 const MODELS = ['glm-5.3-flash', 'deepseek-v4-flash'];
 const HARNESSSES = ['claude', 'opencode', 'pi'];
 const SEEDS = [0, 1, 2];
@@ -49,17 +51,27 @@ if (PHASE === 'pilot') {
   taskIds = ['t1', 't4'];
 } else if (PHASE === 'guided') {
   // E3: instruction-normalization — all tasks, seed 0 only (guide is the treatment)
-  taskIds = fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
-  if (TASK_FILTER) taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
+  taskIds = allTaskIds();
   if (!SEED_FILTER) seeds.splice(0, seeds.length, 0);
 } else if (PHASE === 'hint') {
   // E5: misleading-hint robustness — tasks with a designed hint, seed 3 only
-  taskIds = fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
-  if (TASK_FILTER) taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
+  taskIds = allTaskIds();
   if (!SEED_FILTER) seeds.splice(0, seeds.length, 3);
+} else if (PHASE === 'e4') {
+  // E4: difficulty-scaling baseline — the hard tasks (t9,t10,t11), unguided, seed 0.
+  // Separate phase name so its journal never mixes with the original 8-task matrix.
+  taskIds = ['t9', 't10', 't11'];
+} else if (PHASE === 'validate') {
+  // Reliability validation: one tiny smoke run per requested combo, no grading matrix.
+  taskIds = TASK_FILTER ? TASK_FILTER.split(',') : ['t1'];
+  if (!SEED_FILTER) seeds.splice(0, seeds.length, 0);
+  if (!MODEL_FILTER) { console.error('--validate needs --models and --tasks filters'); process.exit(1); }
 } else {
-  taskIds = fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
-  if (TASK_FILTER) taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
+  taskIds = allTaskIds();
+}
+if (TASK_FILTER && PHASE !== 'validate') taskIds = taskIds.filter((t) => TASK_FILTER.split(',').includes(t));
+function allTaskIds() {
+  return fs.readdirSync(TASKS_DIR).filter((d) => /^t\d+$/.test(d)).sort();
 }
 const REPO_TASKS = new Set(['t4', 't5', 't6']); // mini-repo tasks get longer timeout
 
@@ -70,7 +82,40 @@ if (!token) { console.error('ANTHROPIC_AUTH_TOKEN not set'); process.exit(1); }
 // ---------- queue ----------
 const journalFile = path.join(RUNS, `journal-${PHASE}.jsonl`);
 fs.mkdirSync(RUNS, { recursive: true });
-const done = new Set(readJournal(journalFile).filter((r) => r.score).map((r) => r.runId));
+// Resume set: only records that are (a) scored AND (b) infrastructure-valid count as
+// "done". A record whose run was poisoned (saw 429s with zero completed requests),
+// timed out, or failed with a runner/grade/infra error is NOT done — it will be re-run.
+// The superseded record stays on disk (it is history) but a fresh attempt with a new
+// attempt number is appended, and analysis excludes infra-invalid records anyway.
+function isInfraInvalid(r) {
+  return Boolean(
+    r.timedOut ||
+    r.failure === 'gateway_degraded' ||
+    r.failure === 'runner_error' ||
+    r.failure === 'grade_error' ||
+    r.failure === 'timeout' ||
+    (r.modelCheck?.saw429 && (r.usage?.requests ?? 0) === 0)
+  );
+}
+const done = new Set(
+  readJournal(journalFile)
+    .filter((r) => r.score && !isInfraInvalid(r))
+    .map((r) => r.runId)
+);
+// Highest attempt number already journaled per runId (for transcript naming on resume/retry).
+// Scans the live journal AND every quarantine journal (runs/quarantine/*.jsonl) so a
+// re-run never overwrites quarantined evidence — quarantined attempts keep their
+// transcripts, the new attempt continues the numbering.
+const maxAttempt = new Map();
+const quarantineJournals = fs.existsSync(path.join(RUNS, 'quarantine'))
+  ? fs.readdirSync(path.join(RUNS, 'quarantine')).filter((f) => f.endsWith('.jsonl')).map((f) => path.join(RUNS, 'quarantine', f))
+  : [];
+for (const jf of [journalFile, ...quarantineJournals]) {
+  for (const r of readJournal(jf)) {
+    const a = r.attempt ?? 1;
+    if (!maxAttempt.has(r.runId) || maxAttempt.get(r.runId) < a) maxAttempt.set(r.runId, a);
+  }
+}
 
 const queue = [];
 for (const task of taskIds) {
@@ -107,6 +152,7 @@ for (let i = 0; i < CONC; i++) {
 }
 const proxies = [];
 const proxyJournals = [];
+const proxyPids = new Set();
 for (let i = 0; i < CONC; i++) {
   const proxyJournal = path.join(LOGS, `proxy-${PHASE}-w${i}.jsonl`);
   proxyJournals.push(proxyJournal);
@@ -114,6 +160,7 @@ for (let i = 0; i < CONC; i++) {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, ANTHROPIC_AUTH_TOKEN: token },
   });
+  proxyPids.add(p.pid);
   await new Promise((res, rej) => {
     p.stdout.on('data', (d) => { if (String(d).includes('"ok":true')) res(); });
     p.on('exit', (c) => rej(new Error(`proxy w${i} exited ${c}`)));
@@ -148,42 +195,78 @@ let finalized = false;
 function unlockMasters() {
   if (finalized) return;
   finalized = true;
-  for (const p of lockedMasters) { try { fs.chmodSync(p, 0o755); } catch {} }
+  for (const p of lockedMasters) { try { fs.chmodSync(p, 0o755); } catch (e) { console.error('unlock failed for', p, String(e)); } }
+  console.error('unlockMasters: done (finalized=true)');
 }
-process.on('SIGINT', () => { unlockMasters(); process.exit(130); });
-process.on('SIGTERM', () => { unlockMasters(); process.exit(143); });
+// Clean shutdown: kill tracked harness process groups, stop proxies, unlock masters.
+// `finalized` guards double-entry (signal + uncaughtException racing is possible).
+let shuttingDown = false;
+async function shutdown(code) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.error(`\nshutting down cleanly (code ${code})`);
+  // 1. Kill every tracked harness child (whole process group) so no detached
+  //    harness survives the runner.
+  try { await killTrackedChildren(); } catch {}
+  // 2. Stop the proxies (they hold the gateway auth and the ports).
+  for (const p of proxies) { try { p.kill('SIGTERM'); } catch {} }
+  await new Promise((r) => setTimeout(r, 500));
+  for (const p of proxies) { try { p.kill('SIGKILL'); } catch {} }
+  // 3. Unlock masters last: after nothing that could read them is alive.
+  unlockMasters();
+  process.exit(code);
+}
+process.on('SIGINT', () => shutdown(130));
+process.on('SIGTERM', () => shutdown(143));
+// Also arm the common non-signal exits: an uncaught error must not orphan children.
+process.on('uncaughtException', (e) => { console.error('uncaughtException:', e); shutdown(120); });
+process.on('unhandledRejection', (e) => { console.error('unhandledRejection:', e); shutdown(121); });
 
 // ---------- worker pool ----------
 let idx = 0;
 async function worker(wid) {
   const proxyUrl = `http://127.0.0.1:${PROXY_PORT + wid}`;
   const proxyJournal = proxyJournals[wid];
-  while (idx < pending.length) {
+  while (idx < pending.length && !shuttingDown) {
     const q = pending[idx++];
     const runId = runIdOf(q);
     try {
-      const rec = await runOne(q, runId, proxyUrl, proxyJournal);
+      // Resume semantics: if this runId already has journaled attempts (all infra-
+      // invalid, hence still pending), continue the attempt counter so the fresh
+      // run gets its own transcript file and never overwrites quarantined evidence.
+      const startAttempt = (maxAttempt.get(runId) || 0) + 1;
+      const rec = await runOne(q, runId, proxyUrl, proxyJournal, startAttempt === 1 ? 1 : startAttempt);
+      if (shuttingDown) break; // shutdown began mid-run: don't append a half-dead record
       journalAppend(journalFile, rec);
       const tag = rec.score ? (rec.score.class === 'solved' ? 'SOLVED' : `${rec.score.passed}/${rec.score.total}`) : rec.failure;
       console.log(`[${nowIso()}] w${wid} ${runId}: ${tag} (${Math.round(rec.wallMs / 1000)}s)`);
     } catch (e) {
-      journalAppend(journalFile, { runId, ...q, failure: 'runner_error', error: String(e).slice(0, 300), ts: nowIso() });
-      console.log(`[${nowIso()}] w${wid} ${runId}: RUNNER_ERROR ${String(e).slice(0, 150)}`);
+      if (!shuttingDown) {
+        journalAppend(journalFile, { runId, ...q, failure: 'runner_error', error: String(e).slice(0, 300), ts: nowIso() });
+        console.log(`[${nowIso()}] w${wid} ${runId}: RUNNER_ERROR ${String(e).slice(0, 150)}`);
+      }
     }
   }
 }
 await Promise.all(Array.from({ length: CONC }, (_, i) => worker(i)));
 
 // ---------- finalize ----------
-unlockMasters();
+// NOTE: do NOT set `finalized` here — that flag belongs to unlockMasters() (it makes
+// unlock idempotent). Pre-setting it made unlockMasters() early-return and leave the
+// masters locked after every normal completion (found by the shutdown self-test).
+if (!finalized) {
+  for (const p of proxies) { try { p.kill('SIGTERM'); } catch {} }
+  unlockMasters();
+}
 fs.rmSync(gradeSrc, { recursive: true, force: true });
-for (const p of proxies) p.kill('SIGTERM');
 console.log('done. journal:', journalFile);
 
 // ---------- per-run ----------
 function runIdOf(q) { return `${q.task}-s${q.seed}-${q.harness}-${q.model}`; }
 
-async function runOne(q, runId, proxyUrl, proxyJournal, attempt = 1) {
+async function runOne(q, runId, proxyUrl, proxyJournal, attempt, attemptLog) {
+  attempt = attempt || 1;
+  attemptLog = attemptLog || [];
   const { task, seed, model, harness } = q;
   const specMd = fs.readFileSync(path.join(TASKS_DIR, task, 'spec.md'), 'utf8');
   const prompt = seed >= 1 && seed <= 2 ? seedVariant(specMd, seed) : specMd;
@@ -204,7 +287,12 @@ async function runOne(q, runId, proxyUrl, proxyJournal, attempt = 1) {
   // E5 hint phase: append the misleading hint to the prompt
   const finalPrompt = hint ? prompt + '\n\nHint from a previous engineer: ' + hint : prompt;
 
-  const { argv, env, configFiles } = buildInvocation(harness, model, finalPrompt, runHome, proxyUrl, token);
+  // Run attribution: the proxy URL carries `<runId>.a<attempt>` as its first path
+  // segment. The harness SDKs append /v1/messages (or /chat/completions) to this
+  // base, so every request arrives at the proxy as /<runId>.a<attempt>/... and is
+  // attributable to exactly this run+attempt — no time windows involved.
+  const runScopedProxy = `${proxyUrl}/${runId}.a${attempt}`;
+  const { argv, env, configFiles } = buildInvocation(harness, model, finalPrompt, runHome, runScopedProxy, token);
   // pi guided: append system prompt from the guide file
   if (guide && harness === 'pi') {
     const gi = argv.indexOf('--append-system-prompt');
@@ -217,7 +305,11 @@ async function runOne(q, runId, proxyUrl, proxyJournal, attempt = 1) {
     fs.writeFileSync(cf.path, cf.content);
   }
 
-  const outFile = path.join(LOGS, `${PHASE}-${runId}.out.txt`);
+  // Per-attempt transcript: attempt 1 keeps the historical name; retries get .a<n>
+  // before the extension so each attempt's transcript is preserved independently.
+  const outFile = attempt === 1
+    ? path.join(LOGS, `${PHASE}-${runId}.out.txt`)
+    : path.join(LOGS, `${PHASE}-${runId}.a${attempt}.out.txt`);
   const t0 = Date.now();
   const exit = await spawnHarness(argv, env, sandbox, outFile, REPO_TASKS.has(task) ? TIMEOUT.repo : TIMEOUT.single);
   const wallMs = Date.now() - t0;
@@ -231,18 +323,33 @@ async function runOne(q, runId, proxyUrl, proxyJournal, attempt = 1) {
     failure = 'grade_error';
     score = { class: 'grade_error', passed: 0, total: 0, tests: [], error: String(e).slice(0, 200) };
   }
-  if (exit.timedOut && (!score || score.total === 0)) failure = 'timeout';
+  // Explicit timeout recording (#5): a timed-out run is infra-invalid regardless of
+  // what grading later found in its sandbox — the agent never got to finish, so the
+  // score says nothing about model quality.
+  if (exit.timedOut) failure = 'timeout';
 
-  // proxy stats for this run window (worker-local journal -> exact attribution)
-  const proxyRecs = readJournal(proxyJournal).filter((r) => r.ts >= t0 && r.ts <= t0 + wallMs + 1000);
-  const usage = sumUsage(proxyRecs);
+  // proxy stats: attribution by run id, not by time window. Only records carrying
+  // this run's exact id count; anything else is either another run's traffic or
+  // unattributed (the proxy 403s those, and both cases are excluded here).
+  const allRecs = readJournal(proxyJournal);
+  const mine = allRecs.filter((r) => r.run === `${runId}.a${attempt}`);
+  // foreign = another run's records that OVERLAP this run's wall window (t0..now) —
+  // genuine cross-run mixing. Records from earlier sequential runs (before t0) are
+  // history in the shared per-worker journal, not mixing; the old 60s lookback
+  // miscounted those as "foreign" on every run after the first.
+  const foreign = allRecs.filter((r) => r.run && r.run !== `${runId}.a${attempt}` && r.ts >= t0);
+  const unattributed = allRecs.filter((r) => r.rejected === 'no_run_id' && r.ts >= t0);
+  const usage = sumUsage(mine);
   const modelCheck = {
-    requests: proxyRecs.length,
-    byModel: proxyRecs.reduce((m, r) => { if (r.model) m[r.model] = (m[r.model] || 0) + 1; return m; }, {}),
-    distinctModels: [...new Set(proxyRecs.map((r) => r.model).filter(Boolean))],
-    anyOtherModel: proxyRecs.some((r) => r.model && r.model !== model),
-    saw429: proxyRecs.some((r) => r.status === 429),
-    errors: proxyRecs.filter((r) => r.status === 0 || r.error).length,
+    requests: mine.length,
+    byModel: mine.reduce((m, r) => { if (r.model) m[r.model] = (m[r.model] || 0) + 1; return m; }, {}),
+    distinctModels: [...new Set(mine.map((r) => r.model).filter(Boolean))],
+    anyOtherModel: mine.some((r) => r.model && r.model !== model),
+    saw429: mine.some((r) => r.status === 429),
+    errors: mine.filter((r) => r.status === 0 || r.error).length,
+    // integrity counters: any nonzero value here means attribution or client config is broken
+    foreignRequests: foreign.length,
+    unattributedRejected: unattributed.length,
   };
 
   fs.rmSync(runHome, { recursive: true, force: true });
@@ -255,24 +362,48 @@ async function runOne(q, runId, proxyUrl, proxyJournal, attempt = 1) {
     score, failure, usage, modelCheck,
     transcript: outFile.replace(BENCH + '/', ''),
   };
+  attemptLog.push({
+    attempt,
+    exitCode: rec.exitCode,
+    timedOut: rec.timedOut,
+    wallMs: rec.wallMs,
+    score: rec.score,
+    failure: rec.failure,
+    usage: rec.usage,
+    modelCheck: rec.modelCheck,
+    transcript: rec.transcript,
+  });
 
   // gateway_degraded: harness failed with a 429/rate-limit signature and produced no gradable
   // work -> retry the whole run (fresh attempt, backoff). Non-429 failures are never retried.
-  if (!failure && (!score || score.total === 0) && attempt < 3 && is429Signature(rec)) {
-    console.log(`  ${runId}: gateway_degraded, retry attempt ${attempt + 1}/3`);
+  // Poison signature (learned twice): the run saw 429s AND completed zero model requests
+  // (usage.requests===0) — its 0/N score is gateway noise, not model failure. This must
+  // trigger even when score.total>0 (graded against the full suite), hence the passed===0
+  // && requests===0 test rather than the old score.total===0 gate that 429-poison slipped past.
+  const zeroWork = !rec.usage || rec.usage.requests === 0;
+  const poisoned = is429Signature(rec) && zeroWork && score && score.passed === 0;
+  const degenerated = !failure && (!score || score.total === 0) && is429Signature(rec);
+  if (!failure && (poisoned || degenerated) && attempt < 3) {
+    console.log(`  ${runId}: gateway_degraded (poison=${poisoned} degenerated=${degenerated}), retry attempt ${attempt + 1}/3`);
     await sleep(30_000 * attempt);
-    return runOne(q, runId, proxyUrl, proxyJournal, attempt + 1);
+    return runOne(q, runId, proxyUrl, proxyJournal, attempt + 1, attemptLog);
   }
-  if (!failure && (!score || score.total === 0) && is429Signature(rec)) {
+  if (!failure && (poisoned || degenerated)) {
     rec.failure = 'gateway_degraded'; // exhausted retries; recorded, not counted as model failure
+    attemptLog[attemptLog.length - 1].failure = 'gateway_degraded';
   }
+  // Preserve every attempt's outcome on the final record (#6): the retry chain's
+  // earlier transcripts and scores stay inspectable via rec.attempts.
+  if (attemptLog.length > 1) rec.attempts = attemptLog;
   return rec;
 }
 
 function is429Signature(rec) {
-  if (rec.exitCode === 0 && rec.score && rec.score.total > 0) return false;
-  // Primary evidence: the run's proxy window saw HTTP 429s (gateway concurrency_limit_exceeded).
+  // Primary evidence: this run's OWN attributed requests (by run id) saw HTTP 429s.
+  // Applies even for exit-0 runs — a pi run that 429'd every request still exits 0.
   if (rec.modelCheck && rec.modelCheck.saw429) return true;
+  if (rec.exitCode === 0 && rec.score && rec.score.total > 0 && rec.usage && rec.usage.requests > 0) return false;
+  // Secondary: transcript tail mentions rate limiting (harness-side retries).
   const t = rec.transcript ? path.join(BENCH, rec.transcript) : null;
   if (t && fs.existsSync(t)) {
     const txt = fs.readFileSync(t, 'utf8').slice(-4000);

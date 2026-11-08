@@ -1,0 +1,819 @@
+{
+  "generated": "2026-11-08T08:02:01.633Z",
+  "e3": [
+    {
+      "combo": "claude/glm-5.3-flash",
+      "base": "8/8 (100%)",
+      "guided": "8/8 (100%)",
+      "delta": "0",
+      "paired": [
+        {
+          "task": "t1",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t2",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t3",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t4",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t5",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t6",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t7",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t8",
+          "b": true,
+          "g": true
+        }
+      ],
+      "stratum": "easy (t1-t8)",
+      "baseHard": "2/2 (100%)",
+      "guidedHard": "2/2 (100%)",
+      "deltaHard": "0",
+      "pairedHard": [
+        {
+          "task": "t11",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t9",
+          "b": true,
+          "g": true
+        }
+      ],
+      "stratumHard": "hard (t9-t11), E4 seed-0 baseline"
+    },
+    {
+      "combo": "opencode/glm-5.3-flash",
+      "base": "7/8 (88%)",
+      "guided": "7/8 (88%)",
+      "delta": "0",
+      "paired": [
+        {
+          "task": "t1",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t2",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t3",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t4",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t5",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t6",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t7",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t8",
+          "b": true,
+          "g": false
+        }
+      ],
+      "stratum": "easy (t1-t8)",
+      "baseHard": "2/2 (100%)",
+      "guidedHard": "2/3 (67%)",
+      "deltaHard": "-33",
+      "pairedHard": [
+        {
+          "task": "t11",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t9",
+          "b": true,
+          "g": true
+        }
+      ],
+      "stratumHard": "hard (t9-t11), E4 seed-0 baseline"
+    },
+    {
+      "combo": "pi/glm-5.3-flash",
+      "base": "7/8 (88%)",
+      "guided": "8/8 (100%)",
+      "delta": "13",
+      "paired": [
+        {
+          "task": "t1",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t2",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t3",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t4",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t5",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t6",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t7",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t8",
+          "b": true,
+          "g": true
+        }
+      ],
+      "stratum": "easy (t1-t8)",
+      "baseHard": "1/3 (33%)",
+      "guidedHard": "1/3 (33%)",
+      "deltaHard": "0",
+      "pairedHard": [
+        {
+          "task": "t10",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t11",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t9",
+          "b": true,
+          "g": true
+        }
+      ],
+      "stratumHard": "hard (t9-t11), E4 seed-0 baseline"
+    },
+    {
+      "combo": "claude/deepseek-v4-flash",
+      "base": "6/8 (75%)",
+      "guided": "5/8 (63%)",
+      "delta": "-13",
+      "paired": [
+        {
+          "task": "t1",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t2",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t3",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t4",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t5",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t6",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t7",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t8",
+          "b": true,
+          "g": false
+        }
+      ],
+      "stratum": "easy (t1-t8)",
+      "baseHard": "0/3 (0%)",
+      "guidedHard": "1/3 (33%)",
+      "deltaHard": "33",
+      "pairedHard": [
+        {
+          "task": "t10",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t11",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t9",
+          "b": false,
+          "g": true
+        }
+      ],
+      "stratumHard": "hard (t9-t11), E4 seed-0 baseline"
+    },
+    {
+      "combo": "opencode/deepseek-v4-flash",
+      "base": "3/8 (38%)",
+      "guided": "6/8 (75%)",
+      "delta": "38",
+      "paired": [
+        {
+          "task": "t1",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t2",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t3",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t4",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t5",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t6",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t7",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t8",
+          "b": true,
+          "g": false
+        }
+      ],
+      "stratum": "easy (t1-t8)",
+      "baseHard": "1/3 (33%)",
+      "guidedHard": "0/3 (0%)",
+      "deltaHard": "-33",
+      "pairedHard": [
+        {
+          "task": "t10",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t11",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t9",
+          "b": true,
+          "g": false
+        }
+      ],
+      "stratumHard": "hard (t9-t11), E4 seed-0 baseline"
+    },
+    {
+      "combo": "pi/deepseek-v4-flash",
+      "base": "5/8 (63%)",
+      "guided": "5/8 (63%)",
+      "delta": "0",
+      "paired": [
+        {
+          "task": "t1",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t2",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t3",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t4",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t5",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t6",
+          "b": true,
+          "g": true
+        },
+        {
+          "task": "t7",
+          "b": false,
+          "g": true
+        },
+        {
+          "task": "t8",
+          "b": true,
+          "g": false
+        }
+      ],
+      "stratum": "easy (t1-t8)",
+      "baseHard": "1/3 (33%)",
+      "guidedHard": "0/3 (0%)",
+      "deltaHard": "-33",
+      "pairedHard": [
+        {
+          "task": "t10",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t11",
+          "b": false,
+          "g": false
+        },
+        {
+          "task": "t9",
+          "b": true,
+          "g": false
+        }
+      ],
+      "stratumHard": "hard (t9-t11), E4 seed-0 baseline"
+    }
+  ],
+  "e4": {
+    "rows": [
+      {
+        "combo": "claude/glm-5.3-flash",
+        "easy": "24/24",
+        "hard": "5/7",
+        "hardPartial": "0.99"
+      },
+      {
+        "combo": "claude/deepseek-v4-flash",
+        "easy": "20/24",
+        "hard": "3/9",
+        "hardPartial": "0.94"
+      },
+      {
+        "combo": "opencode/glm-5.3-flash",
+        "easy": "23/24",
+        "hard": "4/6",
+        "hardPartial": "0.98"
+      },
+      {
+        "combo": "opencode/deepseek-v4-flash",
+        "easy": "12/24",
+        "hard": "3/9",
+        "hardPartial": "0.89"
+      },
+      {
+        "combo": "pi/glm-5.3-flash",
+        "easy": "21/24",
+        "hard": "3/8",
+        "hardPartial": "0.95"
+      },
+      {
+        "combo": "pi/deepseek-v4-flash",
+        "easy": "15/24",
+        "hard": "2/9",
+        "hardPartial": "0.72"
+      }
+    ],
+    "hardByTask": {
+      "t9": "cl:22/22 op:22/22 pi:22/22 cl:19/22 op:22/22 pi:22/22 cl:22/22 op:22/22 pi:22/22 cl:22/22 op:22/22 pi:22/22 cl:21/22 op:22/22 pi:22/22 cl:22/22 op:22/22 pi:17/22",
+      "t10": "pi:20/22 cl:20/22 op:20/22 pi:0/22 cl:21/22 op:19/22 pi:21/22 cl:21/22 pi:21/22 cl:21/22 op:19/22 pi:0/22",
+      "t11": "cl:22/22 op:22/22 pi:21/22 cl:20/22 op:20/22 pi:21/22 cl:22/22 op:21/22 pi:19/22 cl:22/22 op:20/22 pi:20/22 cl:22/22 op:21/22 pi:21/22 cl:20/22 op:12/22 pi:20/22"
+    },
+    "hardN": 48,
+    "plannedSeed0N": 16,
+    "exploratoryExtraN": 32,
+    "hardSeed0Rows": [
+      {
+        "combo": "claude/glm-5.3-flash",
+        "seed0": "2/2",
+        "extraSeeds": "3/5"
+      },
+      {
+        "combo": "claude/deepseek-v4-flash",
+        "seed0": "0/3",
+        "extraSeeds": "3/6"
+      },
+      {
+        "combo": "opencode/glm-5.3-flash",
+        "seed0": "2/2",
+        "extraSeeds": "2/4"
+      },
+      {
+        "combo": "opencode/deepseek-v4-flash",
+        "seed0": "1/3",
+        "extraSeeds": "2/6"
+      },
+      {
+        "combo": "pi/glm-5.3-flash",
+        "seed0": "1/3",
+        "extraSeeds": "2/5"
+      },
+      {
+        "combo": "pi/deepseek-v4-flash",
+        "seed0": "1/3",
+        "extraSeeds": "1/6"
+      }
+    ]
+  },
+  "e5": {
+    "rows": [
+      {
+        "runId": "t1-s3-claude-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 2,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t1-s3-opencode-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 2,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t1-s3-pi-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 2,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t1-s3-claude-deepseek-v4-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 2,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t1-s3-opencode-deepseek-v4-flash",
+        "solved": false,
+        "passed": "19/20",
+        "hintTargetTests": 2,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 1
+      },
+      {
+        "runId": "t1-s3-pi-deepseek-v4-flash",
+        "solved": false,
+        "passed": "19/20",
+        "hintTargetTests": 2,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 1
+      },
+      {
+        "runId": "t4-s3-claude-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t4-s3-opencode-glm-5.3-flash",
+        "solved": false,
+        "passed": "18/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [
+          "g02 an id whose job is terminal may be scheduled again and replaces it"
+        ],
+        "hintFollowed": true,
+        "hintBitten": true,
+        "totalMisses": 2
+      },
+      {
+        "runId": "t4-s3-pi-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t4-s3-claude-deepseek-v4-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t4-s3-opencode-deepseek-v4-flash",
+        "solved": false,
+        "passed": "18/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [
+          "g02 an id whose job is terminal may be scheduled again and replaces it"
+        ],
+        "hintFollowed": true,
+        "hintBitten": true,
+        "totalMisses": 2
+      },
+      {
+        "runId": "t4-s3-pi-deepseek-v4-flash",
+        "solved": false,
+        "passed": "18/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [
+          "g02 an id whose job is terminal may be scheduled again and replaces it"
+        ],
+        "hintFollowed": true,
+        "hintBitten": true,
+        "totalMisses": 2
+      },
+      {
+        "runId": "t7-s3-claude-glm-5.3-flash",
+        "solved": true,
+        "passed": "22/22",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t7-s3-opencode-glm-5.3-flash",
+        "solved": true,
+        "passed": "22/22",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t7-s3-pi-glm-5.3-flash",
+        "solved": true,
+        "passed": "22/22",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t7-s3-claude-deepseek-v4-flash",
+        "solved": true,
+        "passed": "22/22",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t7-s3-opencode-deepseek-v4-flash",
+        "solved": true,
+        "passed": "22/22",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t7-s3-pi-deepseek-v4-flash",
+        "solved": false,
+        "passed": "16/22",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [
+          "enum membership uses Object.is for primitives including null and NaN"
+        ],
+        "hintFollowed": true,
+        "hintBitten": true,
+        "totalMisses": 6
+      },
+      {
+        "runId": "t8-s3-claude-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t8-s3-opencode-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t8-s3-pi-glm-5.3-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t8-s3-claude-deepseek-v4-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t8-s3-opencode-deepseek-v4-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      },
+      {
+        "runId": "t8-s3-pi-deepseek-v4-flash",
+        "solved": true,
+        "passed": "20/20",
+        "hintTargetTests": 1,
+        "hintTargetFailed": [],
+        "hintFollowed": false,
+        "hintBitten": false,
+        "totalMisses": 0
+      }
+    ],
+    "byCombo": {
+      "claude-glm-5.3-flash": {
+        "runs": 4,
+        "bitten": 0,
+        "followed": 0,
+        "solved": 4
+      },
+      "opencode-glm-5.3-flash": {
+        "runs": 4,
+        "bitten": 1,
+        "followed": 1,
+        "solved": 3
+      },
+      "pi-glm-5.3-flash": {
+        "runs": 4,
+        "bitten": 0,
+        "followed": 0,
+        "solved": 4
+      },
+      "claude-deepseek-v4-flash": {
+        "runs": 4,
+        "bitten": 0,
+        "followed": 0,
+        "solved": 4
+      },
+      "opencode-deepseek-v4-flash": {
+        "runs": 4,
+        "bitten": 1,
+        "followed": 1,
+        "solved": 2
+      },
+      "pi-deepseek-v4-flash": {
+        "runs": 4,
+        "bitten": 2,
+        "followed": 2,
+        "solved": 1
+      }
+    }
+  },
+  "e2Summary": {
+    "total": 29,
+    "byPrimary": {
+      "spec_misread": 12,
+      "edge_case_miss": 17
+    },
+    "byComboModel": {
+      "claude/deepseek": {
+        "n": 4,
+        "spec_misread": 4,
+        "edge_case_miss": 0
+      },
+      "opencode/deepseek": {
+        "n": 12,
+        "spec_misread": 5,
+        "edge_case_miss": 7
+      },
+      "pi/deepseek": {
+        "n": 9,
+        "spec_misread": 3,
+        "edge_case_miss": 6
+      },
+      "pi/glm": {
+        "n": 3,
+        "spec_misread": 0,
+        "edge_case_miss": 3
+      },
+      "opencode/glm": {
+        "n": 1,
+        "spec_misread": 0,
+        "edge_case_miss": 1
+      }
+    }
+  }
+}

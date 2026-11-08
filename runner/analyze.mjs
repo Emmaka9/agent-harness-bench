@@ -1,6 +1,17 @@
 #!/usr/bin/env node
 // Analysis: ranking table + cluster-bootstrap CIs + paired stats from the journal.
 // Usage: node runner/analyze.mjs [--phase full] [--reps 10000]
+//
+// Timeout policy (revised 2026-11-08 after external review REVIEW-20261108-0247):
+// An ordinary fixed-budget timeout with healthy gateway traffic is a benchmark
+// OUTCOME — the agent had its whole wall budget and didn't finish. It is NOT
+// grouped with infra-invalid records anymore. The PRIMARY ranking is the
+// all-scheduled fixed-budget solve rate (timeout = unsolved, n = every scheduled
+// run). A completed-only view (timeouts excluded) is reported alongside as a
+// sensitivity analysis, plus explicit timeout counts. Runs are never retried
+// until success for the primary ranking; retries exist only for the gateway
+// poison signature (429 + zero completed requests), which is infra noise by
+// construction and stays infra-invalid.
 import fs from 'node:fs';
 import path from 'node:path';
 import { BENCH, readJournal } from './lib.mjs';
@@ -8,7 +19,31 @@ import { BENCH, readJournal } from './lib.mjs';
 const PHASE = process.argv.includes('--phase') ? process.argv[process.argv.indexOf('--phase') + 1] : 'full';
 const REPS = Number(process.argv.includes('--reps') ? process.argv[process.argv.indexOf('--reps') + 1] : 10000);
 const journalFile = path.join(BENCH, 'runs', `journal-${PHASE}.jsonl`);
-const recs = readJournal(journalFile).filter((r) => r.runId && (r.score || r.failure));
+
+// Infrastructure-invalid: measures the infrastructure, not the model.
+// NOTE: plain timeouts are NOT here (see header comment).
+function isInfraInvalid(r) {
+  return Boolean(
+    r.failure === 'gateway_degraded' ||
+    r.failure === 'runner_error' ||
+    r.failure === 'grade_error' ||
+    (r.modelCheck?.saw429 && (r.usage?.requests ?? 0) === 0)
+  );
+}
+const all = readJournal(journalFile).filter((r) => r.runId && (r.score || r.failure));
+const recs = all.filter((r) => !isInfraInvalid(r));
+const excluded = all.filter((r) => isInfraInvalid(r));
+if (excluded.length) {
+  console.error(`note: excluding ${excluded.length} infra-invalid record(s) from rankings: ${excluded.map((r) => r.runId + (r.attempt > 1 ? `.a${r.attempt}` : '')).join(', ')}`);
+}
+// Duplicate-run guard: if a runId has multiple valid records (e.g. re-run after a
+// quarantine), keep only the LATEST valid attempt per runId.
+const latest = new Map();
+for (const r of recs) latest.set(r.runId, r); // readJournal returns file order = append order
+const recsFinal = [...latest.values()];
+if (recsFinal.length !== recs.length) {
+  console.error(`note: deduped ${recs.length - recsFinal.length} superseded record(s) (kept latest attempt per runId)`);
+}
 
 const MODELS = ['glm-5.3-flash', 'deepseek-v4-flash'];
 const HARNESSSES = ['claude', 'opencode', 'pi'];
@@ -17,8 +52,10 @@ for (const m of MODELS) for (const h of HARNESSSES) combos.push({ model: m, harn
 
 // ---------- per-run classification ----------
 // solved = all hidden tests pass; partial = tests-passed fraction; failures classified.
+// A timed-out run counts as UNSOLVED in the primary (fixed-budget) view with its graded
+// partial fraction preserved for the secondary metric.
 const byCombo = new Map(combos.map((c) => [key(c), []]));
-for (const r of recs) {
+for (const r of recsFinal) {
   const k = key({ model: r.model, harness: r.harness });
   if (!byCombo.has(k)) continue;
   const solved = r.score && r.score.class === 'solved' ? 1 : 0;
@@ -49,6 +86,11 @@ function clusterBootstrap(runs, statFn, reps = REPS, seed = 42) {
 
 const solveRate = (runs) => runs.reduce((a, r) => a + r.solved, 0) / runs.length;
 const testFrac = (runs) => runs.reduce((a, r) => a + r.frac, 0) / runs.length;
+// Sensitivity view: completed runs only (timeouts dropped), documented not primary.
+const solveRateCompleted = (runs) => {
+  const c = runs.filter((r) => !r.timedOut);
+  return c.length ? runs.filter((r) => r.solved).length / c.length : 0;
+};
 
 // ---------- report ----------
 const rows = [];
@@ -60,27 +102,32 @@ for (const c of combos) {
   const solved = runs.reduce((a, r) => a + r.solved, 0);
   const failureCounts = {};
   for (const r of runs) if (r.failure) failureCounts[r.failure] = (failureCounts[r.failure] || 0) + 1;
+  const timeouts = runs.filter((r) => r.timedOut).length;
   rows.push({
     ...c, n: runs.length,
     solveRate: solveRate(runs), solveLo: boot.lo, solveHi: boot.hi,
     testFrac: testFrac(runs), fracLo: bootFrac.lo, fracHi: bootFrac.hi,
+    // completed-only sensitivity (excludes timeouts)
+    solveRateCompleted: solveRateCompleted(runs),
+    nCompleted: runs.length - timeouts,
     meanWallS: runs.reduce((a, r) => a + r.wallMs, 0) / runs.length / 1000,
     solved, failureCounts,
     tokensIn: runs.reduce((a, r) => a + (r.usage?.input || 0), 0),
     tokensOut: runs.reduce((a, r) => a + (r.usage?.output || 0), 0),
-    timeouts: runs.filter((r) => r.timedOut).length,
+    timeouts,
   });
 }
 
 rows.sort((a, b) => (b.solveRate ?? 0) - (a.solveRate ?? 0) || (b.testFrac ?? 0) - (a.testFrac ?? 0));
-console.log('=== RANKING (primary: solve rate; secondary: per-test fraction) ===');
-console.log('rank combo                          n   solve  95% CI        testFrac 95% CI        wall_s  tok_in  tok_out  timeouts  failures');
+console.log('=== RANKING (primary: FIXED-BUDGET solve rate over all scheduled runs; timeout = unsolved) ===');
+console.log('    (sensitivity: completed-only solve rate + timeout count shown per row)');
+console.log('rank combo                          n   solve  95% CI        compl-only  timeouts  testFrac 95% CI        wall_s  tok_in  tok_out  failures');
 rows.forEach((r, i) => {
   const name = `${r.harness}/${r.model}`.padEnd(24);
   if (!r.n) { console.log(`${String(i + 1).padStart(2)}  ${name}  n=0`); return; }
   const ci = `[${(r.solveLo * 100).toFixed(0)}–${(r.solveHi * 100).toFixed(0)}%]`;
   const ciF = `[${(r.fracLo * 100).toFixed(0)}–${(r.fracHi * 100).toFixed(0)}%]`;
-  console.log(`${String(i + 1).padStart(2)}  ${name}  ${String(r.n).padStart(3)}  ${(r.solveRate * 100).toFixed(0).padStart(5)}%  ${ci.padEnd(12)}  ${(r.testFrac * 100).toFixed(0).padStart(5)}%  ${ciF.padEnd(12)}  ${r.meanWallS.toFixed(0).padStart(5)}  ${String(r.tokensIn).padStart(6)}  ${String(r.tokensOut).padStart(7)}  ${String(r.timeouts).padStart(3)}  ${JSON.stringify(r.failureCounts)}`);
+  console.log(`${String(i + 1).padStart(2)}  ${name}  ${String(r.n).padStart(3)}  ${(r.solveRate * 100).toFixed(0).padStart(5)}%  ${ci.padEnd(12)}  ${(r.solveRateCompleted * 100).toFixed(0).padStart(6)}% (${String(r.nCompleted).padStart(2)})  ${String(r.timeouts).padStart(3)}  ${(r.testFrac * 100).toFixed(0).padStart(5)}%  ${ciF.padEnd(12)}  ${r.meanWallS.toFixed(0).padStart(5)}  ${String(r.tokensIn).padStart(6)}  ${String(r.tokensOut).padStart(7)}  ${JSON.stringify(r.failureCounts)}`);
 });
 
 // ---------- paired head-to-heads ----------
