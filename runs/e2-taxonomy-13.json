@@ -1,0 +1,13 @@
+[{"runId":"t4-s1-claude-deepseek-v4-flash","primary":"spec_misread","secondary":"none","fixAttempts":1,"whichTests":"terminal-reschedule must replace record + fresh lifecycle"},
+{"runId":"t4-s1-opencode-deepseek-v4-flash","primary":"spec_misread","secondary":"none","fixAttempts":3,"whichTests":"terminal-reschedule"},
+{"runId":"t4-s1-pi-deepseek-v4-flash","primary":"spec_misread","secondary":"none","fixAttempts":2,"whichTests":"terminal-reschedule"},
+{"runId":"t4-s2-opencode-deepseek-v4-flash","primary":"spec_misread","secondary":"none","fixAttempts":2,"whichTests":"terminal-reschedule"},
+{"runId":"t4-s2-pi-deepseek-v4-flash","primary":"spec_misread","secondary":"none","fixAttempts":3,"whichTests":"terminal-reschedule"},
+{"runId":"t7-s0-pi-glm-5.3-flash","primary":"edge_case_miss","secondary":"none","fixAttempts":2,"whichTests":"Object.is enum: -0 vs 0"},
+{"runId":"t7-s0-opencode-deepseek-v4-flash","primary":"edge_case_miss","secondary":"none","fixAttempts":3,"whichTests":"Object.is enum: -0 vs 0"},
+{"runId":"t7-s0-pi-deepseek-v4-flash","primary":"edge_case_miss","secondary":"none","fixAttempts":2,"whichTests":"Object.is enum: -0 vs 0"},
+{"runId":"t7-s1-opencode-deepseek-v4-flash","primary":"edge_case_miss","secondary":"none","fixAttempts":1,"whichTests":"Object.is enum: -0 vs 0"},
+{"runId":"t7-s1-pi-deepseek-v4-flash","primary":"edge_case_miss","secondary":"spec_misread","fixAttempts":3,"whichTests":"Object.is enum: -0 vs 0"},
+{"runId":"t8-s1-opencode-deepseek-v4-flash","primary":"edge_case_miss","secondary":"spec_misread","fixAttempts":6,"whichTests":"cycle path must trace real forward edges"},
+{"runId":"t8-s2-opencode-deepseek-v4-flash","primary":"edge_case_miss","secondary":"none","fixAttempts":4,"whichTests":"duplicate nodes treated as set"},
+{"runId":"t8-s2-pi-deepseek-v4-flash","primary":"edge_case_miss","secondary":"none","fixAttempts":4,"whichTests":"duplicate nodes treated as set"}]

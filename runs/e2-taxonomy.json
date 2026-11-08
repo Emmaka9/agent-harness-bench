@@ -1,0 +1,221 @@
+[
+ {
+  "runId": "t4-s1-claude-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "fixAttempts": 1,
+  "whichTests": "terminal-reschedule must replace record + fresh lifecycle"
+ },
+ {
+  "runId": "t4-s1-opencode-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "fixAttempts": 3,
+  "whichTests": "terminal-reschedule"
+ },
+ {
+  "runId": "t4-s1-pi-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "fixAttempts": 2,
+  "whichTests": "terminal-reschedule"
+ },
+ {
+  "runId": "t4-s2-opencode-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "fixAttempts": 2,
+  "whichTests": "terminal-reschedule"
+ },
+ {
+  "runId": "t4-s2-pi-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "fixAttempts": 3,
+  "whichTests": "terminal-reschedule"
+ },
+ {
+  "runId": "t7-s0-pi-glm-5.3-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "fixAttempts": 2,
+  "whichTests": "Object.is enum: -0 vs 0"
+ },
+ {
+  "runId": "t7-s0-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "fixAttempts": 3,
+  "whichTests": "Object.is enum: -0 vs 0"
+ },
+ {
+  "runId": "t7-s0-pi-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "fixAttempts": 2,
+  "whichTests": "Object.is enum: -0 vs 0"
+ },
+ {
+  "runId": "t7-s1-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "fixAttempts": 1,
+  "whichTests": "Object.is enum: -0 vs 0"
+ },
+ {
+  "runId": "t7-s1-pi-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "spec_misread",
+  "fixAttempts": 3,
+  "whichTests": "Object.is enum: -0 vs 0"
+ },
+ {
+  "runId": "t8-s1-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "spec_misread",
+  "fixAttempts": 6,
+  "whichTests": "cycle path must trace real forward edges"
+ },
+ {
+  "runId": "t8-s2-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "fixAttempts": 4,
+  "whichTests": "duplicate nodes treated as set"
+ },
+ {
+  "runId": "t8-s2-pi-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "fixAttempts": 4,
+  "whichTests": "duplicate nodes treated as set"
+ },
+ {
+  "runId": "t1-s0-claude-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "edge_case_miss",
+  "evidence": "Result claims size purges expired entries 'during iteration'; spec: 'size...never mutates state'. Purge makes delete('c') return false, test expects true. Also no-arg constructor throws wrong TypeError.",
+  "whichTests": "size getter had to be a pure count that never removes expired entries (later delete of expired entry must still return true); plus constructing with no options object at all must throw the capacity message",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t1-s0-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "Code reads options.capacity unguarded; new LRUTTLCache() throws 'Cannot read properties of undefined (reading capacity)' not CAP_MSG. All listed invalid capacities handled. No self-verification ran at all.",
+  "whichTests": "the missed test required new LRUTTLCache() with no options object to throw the capacity TypeError message; agent only validated the capacity value itself",
+  "fixAttempts": 1
+ },
+ {
+  "runId": "t1-s0-pi-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "'const capacity = options.capacity' crashes on new LRUTTLCache() with wrong TypeError message; agent's two verification scripts tested capacity 0/-1/1.5 but never a missing options bag.",
+  "whichTests": "the missed test required new LRUTTLCache() (no options object) to throw 'capacity must be an integer >= 1'; agent verified every listed invalid capacity value except the absent options bag",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t1-s1-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "Doubly-linked-list version passed agent's own tests after fixing a null-tail crash; never tried new LRUTTLCache() with no args -> 'Cannot read properties of undefined (reading capacity)'.",
+  "whichTests": "the missed test required the capacity message when constructing with no options object; the agent's fix loop tested eviction/expiry/recency but never the no-arg construction",
+  "fixAttempts": 3
+ },
+ {
+  "runId": "t1-s2-pi-glm-5.3-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "Destructure 'const {capacity,ttlMs,now} = options' makes new LRUTTLCache() throw 'Cannot destructure property capacity of options as it is undefined' != capacity message; one verify pass, all green.",
+  "whichTests": "the missed test required new LRUTTLCache() with no arguments to throw the capacity TypeError message; the destructuring constructor never considered options being undefined",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t1-s2-claude-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "edge_case_miss",
+  "evidence": "Result: size removes expired ones 'as a side effect' vs spec 'it never mutates state'; plus new LRUTTLCache() throws 'Cannot read properties of undefined (reading capacity)' not CAP_MSG.",
+  "whichTests": "size had to count unexpired entries without ever removing expired ones (expired entries must stay stored, deletable later); plus no-arg construction must yield the capacity message",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t1-s2-pi-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "options.capacity read before any guard on options; new LRUTTLCache() throws 'Cannot read properties of undefined (reading capacity)'; agent's verify scripts covered listed bad values only.",
+  "whichTests": "the missed test required the capacity message for new LRUTTLCache() with no options object; all explicitly listed invalid capacities were handled correctly",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t2-s0-opencode-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "evidence": "Agent's own verify printed calls [1000,2000,3000] yet final message says 'evaluates now() twice'; retryAfterMs persists refilled tokens though spec says it 'nor updates an existing bucket lastMs or tokens'.",
+  "whichTests": "six tests required: now() called exactly twice on a bucket-creating allow (agent: three) and exactly once otherwise; retryAfterMs must leave persisted tokens/lastMs untouched (agent persisted refills, accumulating phantom tokens across retries)",
+  "fixAttempts": 1
+ },
+ {
+  "runId": "t3-s0-opencode-glm-5.3-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "endRow() sets inField=false; after a closed quote the next break hits 'if (inField) endRow()'=false, so a line of only \"\" is never pushed: parse('v\\n\"\"\\n\"\"')→[['v']]",
+  "whichTests": "A line holding only an empty quoted field must be a real one-field row (group \"\" counted), even as the last line with no trailing break.",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t3-s0-opencode-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "edge_case_miss",
+  "evidence": "Number('')=0 accepted as a value (spec: empty string is a parse failure) so min/max/mean are 0 not null; endRow also drops [''] rows though spec says a \"\"-only line is a real row",
+  "whichTests": "Empty-string values must be parse failures under Number(value.trim()) so min/max/mean are null when nothing parses; a \"\"-only line must be a real row.",
+  "fixAttempts": 2
+ },
+ {
+  "runId": "t3-s2-pi-glm-5.3-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "Quote opens only when 'row.length===0 && !lineHasContent' (first field of a line); a,2,\"y,z\" parses to 4 literal fields vs 3-col header → row dropped as malformed",
+  "whichTests": "A quoted field in a non-first column (after commas) must tokenize as one field so the row length matches the header.",
+  "fixAttempts": 1
+ },
+ {
+  "runId": "t3-s2-opencode-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "EOF flush 'if (field !== \"\" || row.length > 0)' drops a final \"\" line with no trailing break: parse('v\\n\"\"\\n\"\"')→[['v'],['']] → count 1, expected 2",
+  "whichTests": "A line holding only \"\" must be a real row — including the final line without a trailing line break.",
+  "fixAttempts": 0
+ },
+ {
+  "runId": "t3-s2-pi-deepseek-v4-flash",
+  "primary": "edge_case_miss",
+  "secondary": "none",
+  "evidence": "'fieldStarted=true; lineHasContent=true;' run before the comma/break branches, so breaks mark lines as content: empty lines never skipped; '\\n\\nv\\n\\n\"\"\\n\\n' → header [''] → []",
+  "whichTests": "Empty lines must be skipped even around a \"\"-only line, so the first real line is the header; own empty-line test passed only because [''] rows were later dropped as malformed.",
+  "fixAttempts": 3
+ },
+ {
+  "runId": "t4-s0-claude-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "evidence": "Result text fixes only cancel's pending branch; skeleton's 'if (this._jobs.has(id)) throw Error(duplicate job id)' kept, though spec: only non-terminal ids throw; terminal reschedule replaces",
+  "whichTests": "schedule() must accept an id whose previous job is terminal (done/cancelled), replacing the record so a fresh lifecycle (start, done emit, snapshot/stats) works.",
+  "fixAttempts": 1
+ },
+ {
+  "runId": "t4-s0-opencode-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "evidence": "Single edit removes cancel's startedAt===null branch; visible node --test 7/7 pass; schedule() still throws 'duplicate job id' for terminal ids — never touched, then declared done",
+  "whichTests": "schedule() must accept an id whose previous job is terminal (done/cancelled), replacing the record so a fresh lifecycle (start, done emit, snapshot/stats) works.",
+  "fixAttempts": 1
+ },
+ {
+  "runId": "t4-s0-pi-deepseek-v4-flash",
+  "primary": "spec_misread",
+  "secondary": "none",
+  "evidence": "Same one-block cancel() edit, declared 'All 7 tests pass'; duplicate-id check untouched — spec 'Rescheduling a terminal id replaces that record' never implemented",
+  "whichTests": "schedule() must accept an id whose previous job is terminal (done/cancelled), replacing the record so a fresh lifecycle (start, done emit, snapshot/stats) works.",
+  "fixAttempts": 1
+ }
+]

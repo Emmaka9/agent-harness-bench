@@ -1215,3 +1215,64 @@
 {"ts":1794047650173,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":200,"ms":359,"reqBytes":20118,"resBytes":1732,"sseUsageEvents":2,"lastUsage":{"input_tokens":179,"output_tokens":59,"cache_read_input_tokens":5376},"sse":true}
 {"ts":1794047650537,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":200,"ms":1558,"reqBytes":23176,"resBytes":10768,"sseUsageEvents":2,"lastUsage":{"input_tokens":938,"output_tokens":256,"cache_read_input_tokens":5376},"sse":true}
 {"ts":1794047652265,"type":"proxy_summary","count":1216,"byModel":{"glm-5.3-flash":535,"deepseek-v4-flash":681},"statusCounts":{"200":1216}}
+{"ts":1794109702142,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":429,"ms":97,"reqBytes":49946,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794109703250,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":200,"ms":265028,"reqBytes":49946,"resBytes":1599305,"sseUsageEvents":2,"lastUsage":{"input_tokens":11704,"output_tokens":32000,"cache_read_input_tokens":0},"sse":true}
+{"ts":1794110063619,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":165,"reqBytes":5760,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110063946,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":78,"reqBytes":34101,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110064810,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":74,"reqBytes":5760,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110065030,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":78,"reqBytes":34101,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110065887,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":71,"reqBytes":5760,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110066112,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":74,"reqBytes":34101,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110067708,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":63,"reqBytes":34101,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110068797,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":61,"reqBytes":34101,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110069866,"method":"POST","path":"/chat/completions","model":"glm-5.3-flash","status":429,"ms":75,"reqBytes":34101,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110070983,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":59,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110072049,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":75,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110073127,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":78,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110075212,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":58,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110076272,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":61,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110077335,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":76,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110081416,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":60,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110082478,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":60,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110083542,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":82,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110091632,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":77,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110092710,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":84,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110093797,"method":"POST","path":"/v1/messages","model":"glm-5.3-flash","status":429,"ms":78,"reqBytes":8933,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110094463,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":89,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110095558,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":86,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110096843,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":84,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110099076,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":81,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110103372,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":62,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110111865,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":88,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110128174,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":162,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110161176,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":95,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110200667,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":153,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110239644,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":146,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110277954,"method":"POST","path":"/v1/messages?beta=true","model":"deepseek-v4-flash","status":429,"ms":170,"reqBytes":50200,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110279534,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":81,"reqBytes":5764,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110279847,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":80,"reqBytes":34117,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110280621,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":63,"reqBytes":5764,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110280933,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":82,"reqBytes":34117,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110281689,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":88,"reqBytes":5764,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110282018,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":72,"reqBytes":34117,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110283530,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":68,"reqBytes":34117,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110284603,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":89,"reqBytes":34117,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110285696,"method":"POST","path":"/chat/completions","model":"deepseek-v4-flash","status":429,"ms":68,"reqBytes":34117,"resBytes":122,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110286758,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":62,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110287826,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":62,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110288891,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":66,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110290963,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":66,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110292032,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":63,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110293096,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":85,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110297190,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":68,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110298261,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":81,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110299345,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":68,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110307421,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":167,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110308590,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":79,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110309672,"method":"POST","path":"/v1/messages","model":"deepseek-v4-flash","status":429,"ms":78,"reqBytes":8941,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110310326,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":429,"ms":88,"reqBytes":52414,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110311420,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":429,"ms":86,"reqBytes":52414,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794110312614,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":429,"ms":88,"reqBytes":52414,"resBytes":104,"error":"Too many concurrent requests (limit: 2)"}
+{"ts":1794109968546,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":200,"ms":345210,"reqBytes":168537,"resBytes":1768172,"sseUsageEvents":2,"lastUsage":{"input_tokens":3469,"output_tokens":32000,"cache_read_input_tokens":9216},"sse":true}
+{"ts":1794110315070,"method":"POST","path":"/v1/messages?beta=true","model":"glm-5.3-flash","status":200,"ms":64621,"reqBytes":52414,"resBytes":312364,"sseUsageEvents":2,"lastUsage":{"input_tokens":12295,"output_tokens":6959,"cache_read_input_tokens":0},"sse":true}
+{"ts":1794110420291,"type":"proxy_summary","count":60,"byModel":{"glm-5.3-flash":28,"deepseek-v4-flash":32},"statusCounts":{"200":3,"429":57}}
