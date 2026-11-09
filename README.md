@@ -1,6 +1,6 @@
 # agent-harness-bench
 
-**Does the agent harness matter as much as the model?** A 144-run controlled benchmark of two LLMs (glm-5.3-flash, deepseek-v4-flash) × three coding-agent harnesses (Claude Code 2.1.319, opencode 1.19.5, pi 0.73.1) on 8 custom agentic-coding tasks, graded by hidden `node --test` suites.
+**Does the agent harness matter as much as the model?** An exploratory 144-run controlled benchmark of two LLMs (glm-5.3-flash, deepseek-v4-flash) × three coding-agent harnesses (Claude Code 2.1.319, opencode 1.19.5, pi 0.73.1) on 8 custom agentic-coding tasks (11 total with the follow-up hard tasks), graded by hidden `node --test` suites. **Exploratory: conclusions are observations about these tasks and versions, not a general ranking.**
 
 **Headline result — full ranking** (solve rate on hidden tests; CI = cluster bootstrap over the 8 tasks, 10k reps):
 
@@ -14,8 +14,8 @@
 | 6 | opencode / deepseek-v4-flash | 50% (12/24) | [29–75] | 96% | 20s |
 
 - **Model effect:** glm-5.3-flash beat deepseek-v4-flash on every harness (paired same-task/same-seed W/T/L, zero losses).
-- **Harness effect:** the harness choice barely matters for glm, but is decisive for deepseek — Claude Code lifts deepseek from 50% (opencode) to 83% (paired W/T/L 9/14/1, no losses).
-- **Zero infra noise:** 0 timeouts, 0 rate-limit failures, 0 grade errors, and 144/144 runs verified to have requested exactly the assigned model (per-request logging proxy).
+- **Harness effect:** the harness choice barely matters for glm, but is decisive for deepseek — Claude Code lifts deepseek from 50% (opencode) to 83% (paired W/T/L 9/14/1, no losses). (On the harder follow-up tasks this ordering partially reverses for deepseek — see REPORT.md E4.)
+- **Zero infra noise in the main matrix:** 0 timeouts, 0 rate-limit failures, 0 grade errors, and 144/144 runs verified to have requested exactly the assigned model (per-request logging proxy; this checks request *labels*, not the gateway's served-model identity).
 
 Full analysis, per-task matrix, failure-mode analysis, and method notes: **[REPORT.md](REPORT.md)**.
 
@@ -50,10 +50,14 @@ runner/       the harness: run.mjs (matrix runner, isolation, journal),
 tasks/        t1..t8: spec.md, skeleton/, tests/ (hidden), reference/, stub/
 runs/         journal-pilot.jsonl, journal-full.jsonl — one record per run:
               per-test results, token usage, model verification, transcript path
-logs/         raw agent transcripts (full-*.out.txt[.gz], pilot-*, smoke-*),
+              journal-{e4,e4-replace,guided,hint,validate}.jsonl — follow-up phases
+              e4-replace/README.md — replacement-run provenance + selection policy
+              quarantine/ — excluded records with rationales
+logs/         raw agent transcripts (full-*.out.txt[.gz], pilot-*, smoke-*,
+              e4-*, e4-replace-*, guided-*, hint-*, validate-*),
               proxy request journals (proxy-*-w*.jsonl), gateway findings (gates/)
 configs/      harness invocation/isolation templates (harness-configs.json)
-REPORT.md     the full benchmark report
+REPORT.md     the full benchmark report (exploratory study + consolidated limitations)
 ```
 
 The 144 `logs/full-*.out.txt` transcripts are the raw evidence behind every number in the report; the five largest are gzipped (54MB → 516K etc.). Journals are the compact ground truth (per-test, per-token).
@@ -72,18 +76,28 @@ node runner/smoke.mjs
 node runner/run.mjs --phase pilot --concurrency 1
 node runner/run.mjs --phase full  --concurrency 1   # resumable journal
 
+# follow-up phases (optional; see REPORT.md): E4 hard tasks, replacements, E3, E5
+node runner/run.mjs --phase e4 --concurrency 1
+node runner/run.mjs --phase e4-replace --tasks t10 --seeds 0 --models <m> --harnesses <h> --concurrency 1
+node runner/run.mjs --phase guided --concurrency 1
+node runner/run.mjs --phase hint --concurrency 1
+
 # 4. ranking + stats
 node runner/analyze.mjs --phase full --reps 10000
+node runner/experiments.mjs   # E3/E4/E5 + replacement sensitivity → runs/experiments.json
 ```
 
 **Gateway constraints we hit (your gateway may differ):** hard cap of 2 concurrent requests/token (→ run sequentially); requests with `max_tokens <= 64` are fast-pathed to a different model regardless of the requested id (see `logs/gates/GATE-A-FINDING.md` — validate the *requested* model, and remap claude's aux-model slots to the run's model).
 
 ## Method notes & caveats
 
-- The statistical unit is the task (n=8), so CIs are wide; ranks within overlapping CIs are ties. The strongest claims are the paired contrasts (consistent across seeds and tasks).
-- Seeds are neutral prompt variants, not temperature changes; harness system prompts/tool ergonomics are uncontrolled — this measures model-through-harness as shipped.
-- The gateway's model id is what we control; served-model identity behind the gateway is not independently verifiable (documented quirk above).
-- All 29 unsolved runs were genuine `wrong_solution` grades; deepseek repeats semantically identical mistakes across seeds and harnesses (25 unsolved runs collapse to 9 distinct failure signatures, 15 signature-by-seed cells) — e.g. reschedule-after-terminal semantics in t4.
+- **Exploratory study, not a general ranking.** 11 distinct custom tasks total; seed repeats re-word the same task's prompt, so the task is the statistical unit and repeats are not independent task samples. Claims are scoped to these tasks, these harness versions, this gateway.
+- The statistical unit is the task (n=8 main matrix), so CIs are wide; ranks within overlapping CIs are ties. The strongest claims are the paired contrasts (consistent across seeds and tasks).
+- Seeds are neutral prompt variants (seed 0 = spec verbatim, seeds 1/2 append one neutral sentence, seed 3 = the E5 misleading hint), not temperature changes; harness system prompts/tool ergonomics are uncontrolled — this measures model-through-harness as shipped.
+- The gateway's requested model id is what we control and verify; served-model identity behind the gateway is not independently verifiable (documented quirk above).
+- All 29 unsolved main-matrix runs were genuine `wrong_solution` grades; deepseek repeats semantically identical mistakes across seeds and harnesses (25 unsolved runs collapse to 9 distinct failure signatures, 15 signature-by-seed cells) — e.g. reschedule-after-terminal semantics in t4.
+- Follow-up phases (REPORT.md): E4 hard tasks (with four hardened-runner replacement reruns of compromised seed-0 Mini-Regex-Engine cells — selection policy in `runs/e4-replace/README.md`), E3 workflow guidance, E5 misleading hints (no matched no-hint controls). ~175 historical proxy records were lost in a journal re-split (disclosed in REPORT.md and `runs/quarantine/README.md`); replacements do not recreate them.
+- Regenerate analysis: `node runner/analyze.mjs --phase full --reps 10000` and `node runner/experiments.mjs`.
 
 ## License
 

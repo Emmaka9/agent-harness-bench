@@ -1,5 +1,7 @@
 # Benchmark Report: glm-5.3-flash vs deepseek-v4-flash across Claude Code / opencode / pi
 
+**An exploratory study on a fixed set of 11 custom tasks — not a general ranking.** All conclusions below are observations about these tasks, these harness versions, and this gateway; they do not establish general superiority of any model or harness.
+
 **Date:** 2026-11-07 (main matrix) · 2026-11-08 (hardening + follow-up experiments) · **Matrix:** 8 tasks × 3 seeds × 6 combos = 144 runs, all graded; plus E4 54 scheduled (53 original observed + 4 replacement reruns of compromised seed-0 Mini-Regex-Engine cells) / E3 66 / E5 24 follow-up runs. **Zero unexplained infra failures.** Request attribution by run ID applies to E3, E5, the validation matrix, all replacement runs, all local tests, and 50 of 53 original E4 records; the 3 exceptions are seed-0 Mini-Regex-Engine E4 records that ran on the pre-hardening runner (time-window attribution + requested-model checks; superseded by run-scoped replacements in the published tables). The original 144-run matrix predates run-scoped attribution and was verified by per-worker proxy isolation + requested-model **label** checks instead (`modelCheck.anyOtherModel = 0` everywhere — outgoing request labels, not served-model echoes).
 
 ## Ranking (primary: hidden-test solve rate; secondary: per-test fraction)
@@ -85,7 +87,7 @@ A shared workflow guide (read the spec fully before coding; enumerate edge cases
 | **opencode/deepseek** | **3/8 → 6/8** | **+38** | 1/3 → 0/3 (n=3) | −33 |
 | pi/deepseek | 5/8 → 5/8 | 0 | 1/3 → 0/3 (n=3) | −33 |
 
-- **The workflow guide closes most of the opencode/deepseek harness gap on easy tasks** (+38pp; paired flips: t1, t2, t3, t7 miss→solve, offset by t8 solve→miss). This is direct evidence that a large share of that pairing's deficit was process (workflow), not model capability.
+- **The workflow guide closes most of the opencode/deepseek harness gap on easy tasks** (+38pp; paired flips: t1, t2, t3, t7 miss→solve, offset by t8 solve→miss). Within this study's limits (seed 0, n=8 matched cells), this is evidence that a large share of that pairing's deficit on these tasks was process (workflow), not model capability.
 - Guidance does **not** rescue deepseek on the hard tasks (opencode 1→0, pi 1→0; in both pairings the single paired flip is t9 solve→miss) — where the deficit is capability, normalizing workflow doesn't help. (pi/glm's easy +13 is its t7 miss→solve.)
 - claude/deepseek hard 0→1/3 (+33) suggests a capability-adjacent gain there, but n=3/stratum — read as directional only.
 
@@ -114,13 +116,32 @@ A shared workflow guide (read the spec fully before coding; enumerate edge cases
 - opencode usage reconstructed from its own transcripts/proxy journal (OpenAI-wire SSE usage needed a balanced-brace parser — fixed mid-session, before the matrix ran).
 - Seeds 1/2 are neutral-sentence prompt variants, not temperature changes (temperature is whatever each harness defaults to — an uncontrolled variable).
 - Other uncontrolled variables: harness system prompts, tool ergonomics (edit vs rewrite), agentic loop structure. The benchmark measures **model-through-harness as shipped**, which is exactly the question asked.
-- n=8 tasks: statistical unit is the task; differences <~15pp in solve rate are within CI noise. The paired contrasts (claude>opencode on deepseek; glm>deepseek everywhere) are consistent across seeds and tasks and are the strongest claims here.
+- n=8 tasks (11 with the E4 hard tasks): the statistical unit is the task; repeats (seeds) are re-worded prompts of the same task, not new task samples. Differences <~15pp in solve rate are within CI noise. The paired contrasts (claude>opencode on deepseek; glm>deepseek everywhere) are consistent across seeds and tasks and are the strongest claims here — but they describe these tasks only.
 
-## Verdict
+## Reproducing the analysis
 
-1. **glm-5.3-flash through Claude Code** — perfect 24/24; the combination to pick when accuracy matters most.
-2. **glm-5.3-flash through opencode or pi** — statistically tied with the leader for glm; pi had the lowest observed mean wall time and recorded input-token count for glm; monetary cost was not measured.
-3. **deepseek-v4-flash through Claude Code** — the best deepseek combination by a clear paired margin.
-4. **deepseek through opencode/pi** — drops to 50–63%; the harness choice matters more for deepseek than for glm.
+- Harness versions are pinned in `configs/harness-configs.json` (Claude Code 2.1.319, opencode 1.19.5, pi 0.73.1) and vendored under `vendor/` (see README "Reproducing" for the full run sequence).
+- **Seed meaning:** a seed is a prompt variant, not a random-state or temperature control. Seed 0 = the task's `spec.md` verbatim; seeds 1/2 append one neutral sentence ("work carefully..." / "aim for a clean, readable implementation..."); seed 3 (E5 only) appends the misleading hint. Task content, tests, and time budgets are identical across seeds.
+- Time budgets: 360s wall clock for single-file tasks (t10 among them), 540s for multi-repo tasks (t4/t5/t6). Ordinary timeouts count as unsolved; no retry-until-success. Retries exist only for the gateway-poison signature (429s + zero completed requests), max 3 attempts with backoff; every attempt's transcript and score are preserved on the record (`rec.attempts`).
+- Scoring: all-or-nothing solve = every hidden test passes; partial credit = passed/total. Grading runs in a staged /tmp copy while masters are chmod 000.
+- Exclusions: `isInfraInvalid` = gateway_degraded | runner_error | grade_error | 429-with-zero-requests (excluded everywhere). Ordinary timeouts are never excluded. Quarantined records (see `runs/quarantine/README.md`) enter no aggregate.
+- Replacement policy (E4): for the four compromised t10-s0 runIds listed in `runs/e4-replace/README.md`, the latest valid `runs/journal-e4-replace.jsonl` record replaces the original in published tables; the retain-policy sensitivity view is reported in `runs/experiments.json` (`e4.replacementSensitivity`) and changed no conclusion.
+- Regenerate: `node runner/analyze.mjs --phase full --reps 10000` (main ranking) and `node runner/experiments.mjs` (writes `runs/experiments.json`; E3/E4/E5 + replacement sensitivity). Run order, retry rules, and per-phase journals are in `runner/run.mjs`; the proxy's run-scoped attribution rules are in `runner/proxy.mjs`.
+
+## Verdict (observed on these 11 tasks only)
+
+1. **glm-5.3-flash through Claude Code** — perfect 24/24 on the 8-task matrix and the top hard-task cell (5/9); the strongest observed combination in this study. This is not a claim of general superiority.
+2. **glm-5.3-flash through opencode or pi** — statistically tied with the leader for glm on the main matrix; pi had the lowest observed mean wall time and recorded input-token count for glm. Token counters are not monetary cost.
+3. **deepseek-v4-flash through Claude Code** — the strongest deepseek pairing observed, by a clear paired margin on the main matrix.
+4. **deepseek through opencode/pi** — drops to 50–63% on the main matrix; the harness choice mattered more for deepseek than for glm on these tasks. On the hard tasks this ordering partially reversed (see E4), so the harness effect is not a stable generalization.
+
+## Limitations (consolidated)
+
+- **11 distinct custom tasks total; repeats are not independent task samples.** The statistical unit is the task; seeds are prompt re-wordings of the *same* task (see Method notes), so n=8 or n=11 tasks is the true sample size and CIs reflect task-sampling uncertainty only. No claim extends beyond these tasks.
+- **Requested-model labels were checked; served-model identity was not independently verified.** The proxy verifies every request carried the assigned model id; what the gateway actually served behind that id cannot be verified from here (documented routing quirk, `logs/gates/GATE-A-FINDING.md`).
+- **Guidance comparisons (E3) have limited replication** — seed 0 only, n=8 easy / n=3 hard matched cells per combo; deltas of ±33pp rest on 1–3 paired flips.
+- **Hint experiments (E5) lack matched no-hint controls** — seed 3 is the hint treatment by design; "bitten" outcomes are a proxy (failures located where hints point), not proof the hints caused them.
+- **~175 historical proxy records were lost** in the journal re-split (disclosed above and in `runs/quarantine/README.md`). The four replacement runs repair specific evidence gaps but do not recreate lost history.
+- Other uncontrolled variables: harness system prompts, tool ergonomics, agentic loop structure, per-harness temperature defaults, gateway load during the observation window.
 
 Artifacts: `runs/journal-{pilot,full}.jsonl` (main-matrix records: per-test results, token usage, model verification) plus `runs/journal-{e4,guided,hint,validate,e4-replace}.jsonl` (follow-up phases, see section above; `runs/e4-replace/README.md` documents replacement provenance + selection policy), `logs/pilot-*.out.txt` + `logs/full-*.out.txt` (main-matrix transcripts; follow-up transcripts under `logs/e4-*`, `logs/guided-*`, `logs/hint-*`, `logs/validate-*`, `logs/e4-replace-*`), `logs/gates/*.md` (gateway findings), `runner/{run,grade,analyze,proxy,redact}.mjs`. Gateway token redacted from any shared artifacts via `runner/redact.mjs`.
